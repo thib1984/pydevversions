@@ -84,6 +84,10 @@ commands:
 
   - name: sudo
   - name: trivy
+
+  - name: virtualbox
+    version_cmd: ["virtualbox", "--help"]
+      
   - name: wget
   - name: yarn
   - name: zsh
