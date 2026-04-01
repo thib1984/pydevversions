@@ -1,0 +1,81 @@
+commands:
+  - name: bash
+  - name: biome
+
+  - name: cf
+    version_cmd: ["cf", "version"]
+
+  - name: cf7
+    version_cmd: ["cf7", "version"]
+
+  - name: cf8
+    version_cmd: ["cf8", "version"]
+
+  - name: chromedriver
+  - name: code
+  - name: curl
+  - name: docker
+
+  - name: docker compose
+    version_cmd: ["docker", "compose", "version"]
+    path_cmd: ["whereis", "-b", "docker"]
+
+  - name: firefox
+  - name: fly
+  - name: git
+  - name: gradle
+  - name: google-chrome
+  - name: groovy
+  - name: hadolint
+
+  - name: helm
+    version_cmd: ["helm", "version"]
+
+  - name: intellij
+  - name: java
+  - name: jq
+
+  - name: kernel
+    version_cmd: ["uname", "-r"]
+    path_cmd: ["bash", "-c", "readlink -f /boot/vmlinuz-$(uname -r)"]
+
+  - name: kotlin
+    version_cmd: ["kotlin", "-version"]
+
+  - name: krew
+    version_cmd: ["krew", "version"]
+
+  - name: kubectl
+    version_cmd: ["kubectl", "version", "--client=true"]
+
+  - name: k9s
+    version_cmd: ["k9s", "version", "-s"]
+
+  - name: lift
+    version_cmd: ["lift", "version"]
+
+  - name: lino
+
+  - name: linux
+    version_cmd: ["cat", "/etc/os-release"]
+    path_cmd: ["echo", "/etc/os-release"]
+
+  - name: mongo
+  - name: mvn
+  - name: node
+  - name: npm
+  - name: nvm
+  - name: pip
+  - name: pip3
+  - name: pipx
+  - name: python
+  - name: python3
+  - name: secretops
+
+  - name: ssh
+    version_cmd: ["ssh", "-V"]
+
+  - name: trivy
+  - name: wget
+  - name: yarn
+  - name: zsh

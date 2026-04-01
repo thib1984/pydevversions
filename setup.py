@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name="pydevversions",
-    version="0.4.0",
+    version="1.0.0",
     description="pydevversions game in terminal",
     long_description="The complete description/installation/use/FAQ is available at : https://github.com/thib1984/pydevversions#readme",
     url="https://github.com/thib1984/pydevversions",
@@ -11,7 +11,7 @@ setup(
     license="MIT",
     license_files="LICENSE.txt",
     packages=["pydevversions"],
-    install_requires=["tqdm", "rich"],
+    install_requires=["tqdm", "rich", "pyyaml"],
     zip_safe=False,
     entry_points={
         "console_scripts": [
@@ -24,4 +24,8 @@ setup(
         "Operating System :: OS Independent",
     ],
     python_requires=">=3.10",
+    include_package_data=True,
+    package_data={
+        "pydevversions": ["apps.yaml"],
+    },    
 )
