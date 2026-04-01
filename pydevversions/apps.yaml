@@ -12,6 +12,7 @@ commands:
     version_cmd: ["cf8", "version"]
 
   - name: chromedriver
+  - name: chromium  
   - name: code
   - name: curl
   - name: docker
@@ -26,6 +27,7 @@ commands:
   - name: git
   - name: gnome-shell  
   - name: google-chrome
+  - name: google-chrome-stable
   - name: gradle
   - name: groovy
   - name: hadolint
