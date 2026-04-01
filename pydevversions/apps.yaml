@@ -22,6 +22,7 @@ commands:
 
   - name: firefox
   - name: fly
+  - name: gcc  
   - name: git
   - name: gradle
   - name: google-chrome
@@ -60,6 +61,7 @@ commands:
     version_cmd: ["cat", "/etc/os-release"]
     path_cmd: ["echo", "/etc/os-release"]
 
+  - name: make
   - name: mongo
   - name: mvn
   - name: node
