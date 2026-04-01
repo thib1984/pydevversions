@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name="pydevversions",
-    version="0.2.1",
+    version="0.3.0",
     description="pydevversions game in terminal",
     long_description="The complete description/installation/use/FAQ is available at : https://github.com/thib1984/pydevversions#readme",
     url="https://github.com/thib1984/pydevversions",
@@ -11,7 +11,7 @@ setup(
     license="MIT",
     license_files="LICENSE.txt",
     packages=["pydevversions"],
-    install_requires=["columnar","termcolor", "colorama", "tqdm"],
+    install_requires=["termcolor", "colorama", "tqdm", "rich"],
     zip_safe=False,
     entry_points={
         "console_scripts": [

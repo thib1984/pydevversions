@@ -67,7 +67,18 @@ Written by thib1984.
         """,
         formatter_class=CustomHelpFormatter,
     )
-    my_group = my_parser.add_mutually_exclusive_group()
-
+    my_parser.add_argument(
+        "--full",
+        action="store_true",
+        help="display all apps",
+    ),  
+    my_parser.add_argument(
+        "-f",
+        "--filter",
+        action="store",
+        type=str,
+        metavar="app",
+        help="",
+    )
     args = my_parser.parse_args()
     return args

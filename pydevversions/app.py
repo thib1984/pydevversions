@@ -2,12 +2,17 @@
 pydevversions use case
 """
 
-from columnar import columnar
 from tqdm import tqdm
 import os
 import subprocess
 import shutil
+import re
+from rich.console import Console
+from rich.table import Table
+from rich.text import Text
+from pydevversions.args import compute_args
 
+args = compute_args()
 shell_path = os.environ.get("SHELL", "/bin/bash")
 shell = os.path.basename(shell_path)  # "bash", "zsh", etc.
 if shell == "bash":
@@ -17,13 +22,32 @@ elif shell == "zsh":
 else:
     rc_files = ["~/.profile"]
 
-print("💻 shell: " + shell)    
-print("🏠 home: " + os.path.expanduser("~"))
+print("💻 shell    : " + shell)    
+print("🏠 home     : " + os.path.expanduser("~"))
 source_cmds = " && ".join(f"[ -f {os.path.expanduser(f)} ] && source {os.path.expanduser(f)}" for f in rc_files)
 cmd = f"{source_cmds} && env"
 
 result = subprocess.run([shell, "-c", cmd], capture_output=True, text=True)
 env = dict(line.split("=", 1) for line in result.stdout.splitlines() if "=" in line)
+
+# Regex pour tout mot contenant x.y ou x.y.z
+word_with_version_regex = re.compile(r'\b\w*\d+\.\d+(?:\.\d+)?\S*\b')
+
+def color_version(cell):
+    text = Text(cell)
+    if cell=="not installed":
+        text.stylize("red bold")
+        return text
+    for match in re.finditer(word_with_version_regex, cell):
+        text.stylize("yellow bold", match.start(), match.end())
+    return text
+
+def color_path(cell):
+    text = Text(cell)
+    if cell=="NA":
+        text.stylize("red bold")
+        return text
+    return cell
 
 commands = [
     "bash",
@@ -133,15 +157,21 @@ def run_command(cmd):
     if result.returncode == 0:
         return (result.stdout.strip() or result.stderr.strip())
 
-
     return "NA"
 
 def app():
     rows = []
 
-    for item in tqdm(commands, desc="⏳ Progress", bar_format="{l_bar}{bar}"):
+    console = Console()
 
+    table = Table(show_header=True, header_style="bold yellow",show_lines=True)
+    table.add_column("Binary")
+    table.add_column("Version")
+    table.add_column("Path")
+    for item in tqdm(commands, desc="⏳ progress ", bar_format="{l_bar}{bar}"):
         if isinstance(item, str):
+            if getattr(compute_args(), "filter", None) and compute_args().filter not in item:
+                continue  # passe à l'élément suivant
             name = item
             base_binary = item.split()[0]
             version_cmd = [base_binary, "--version"]
@@ -157,6 +187,8 @@ def app():
 
         else:
             name = item["name"]
+            if getattr(compute_args(), "filter", None) and compute_args().filter not in name:
+                continue  # passe à l'élément suivant            
             base_binary = name.split()[0]
 
             version_cmd = item.get(
@@ -183,10 +215,10 @@ def app():
         if version != "not installed":
             path_output = run_command(path_cmd)
         else:
-            path_output = "NA"   
-        if version != "not installed":
-            rows.append([name, version, path_output])
+            path_output = "NA"
+
+        if version != "not installed" or args.full or getattr(compute_args(), "filter", None):                      
+            table.add_row(name, color_version(version), color_path(path_output))
 
 
-    table = columnar(rows, headers=["Binary", "Version", "Path"])
-    print(table)
+    console.print(table)
