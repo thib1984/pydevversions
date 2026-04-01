@@ -11,6 +11,8 @@ from rich.console import Console
 from rich.table import Table
 from rich.text import Text
 from pydevversions.args import compute_args
+from datetime import datetime
+import getpass
 
 args = compute_args()
 shell_path = os.environ.get("SHELL", "/bin/bash")
@@ -22,8 +24,11 @@ elif shell == "zsh":
 else:
     rc_files = ["~/.profile"]
 
-print("💻 shell    : " + shell)    
+print("📅 date     : " + datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+print("👤 user     : " + getpass.getuser())
 print("🏠 home     : " + os.path.expanduser("~"))
+print("💻 shell    : " + shell)  
+  
 source_cmds = " && ".join(f"[ -f {os.path.expanduser(f)} ] && source {os.path.expanduser(f)}" for f in rc_files)
 cmd = f"{source_cmds} && env"
 
