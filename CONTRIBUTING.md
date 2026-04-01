@@ -44,7 +44,13 @@ pipx install pydevversions
 
 # Publish to pypi (WIP)
 
+## Prerequisites
+
+```
+pipx install build && pipx install twine
+```
+
 ```
 #from work directory
-python3 -m build && python3 -m twine upload dist/* #to publish to pypi
+pipx run build && pipx run twine upload dist/*
 ```
