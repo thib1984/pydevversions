@@ -73,6 +73,16 @@ Written by thib1984.
         help="display all apps",
     ),  
     my_parser.add_argument(
+        "--raw",
+        action="store_true",
+        help="raw output",
+    ),   
+    my_parser.add_argument(
+        "--json",
+        action="store_true",
+        help="json output",
+    ),       
+    my_parser.add_argument(
         "-f",
         "--filter",
         action="store",

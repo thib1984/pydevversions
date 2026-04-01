@@ -13,8 +13,12 @@ from rich.text import Text
 from pydevversions.args import compute_args
 from datetime import datetime
 import getpass
+import json
 
+json_obj = {"info": {}, "programs": []}
 args = compute_args()
+raw=compute_args().raw
+is_json=compute_args().json
 shell_path = os.environ.get("SHELL", "/bin/bash")
 shell = os.path.basename(shell_path)  # "bash", "zsh", etc.
 if shell == "bash":
@@ -24,10 +28,25 @@ elif shell == "zsh":
 else:
     rc_files = ["~/.profile"]
 
-print("📅 date     : " + datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
-print("👤 user     : " + getpass.getuser())
-print("🏠 home     : " + os.path.expanduser("~"))
-print("💻 shell    : " + shell)  
+labels = {
+    "date": "date" if raw else "📅 date",
+    "user": "user" if raw else "👤 user",
+    "home": "home" if raw else "🏠 home",
+    "shell": "shell" if raw else "💻 shell",
+}
+
+# Affichage
+info = {
+    "date": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+    "user": getpass.getuser(),
+    "home": os.path.expanduser("~"),
+    "shell": shell,
+}
+for key in ["date", "user", "home", "shell"]:
+    if not is_json:
+        print(f"{labels[key]:<10} : {info[key]}")
+    else:
+        json_obj["info"][key] = info[key]
   
 source_cmds = " && ".join(f"[ -f {os.path.expanduser(f)} ] && source {os.path.expanduser(f)}" for f in rc_files)
 cmd = f"{source_cmds} && env"
@@ -39,6 +58,8 @@ env = dict(line.split("=", 1) for line in result.stdout.splitlines() if "=" in l
 word_with_version_regex = re.compile(r'\b\w*\d+\.\d+(?:\.\d+)?\S*\b')
 
 def color_version(cell):
+    if raw:
+        return cell
     text = Text(cell)
     if cell=="not installed":
         text.stylize("red bold")
@@ -48,6 +69,8 @@ def color_version(cell):
     return text
 
 def color_path(cell):
+    if raw:
+        return cell    
     text = Text(cell)
     if cell=="NA":
         text.stylize("red bold")
@@ -122,6 +145,10 @@ commands = [
     "python",
     "python3",
     "secretops",
+    {
+        "name": "ssh",
+        "version_cmd": ["ssh", "-v"]
+    },  
     "trivy",
     "wget",
     "yarn",
@@ -168,15 +195,20 @@ def app():
     rows = []
 
     console = Console()
+    header_style = "bold yellow" if not raw else None
+    if not is_json:
+        table = Table(show_header=True, header_style=header_style,show_lines=True)
+        table.add_column("Binary")
+        table.add_column("Version")
+        table.add_column("Path")
+    one = False
+    iterable = commands #if raw else tqdm(commands, desc="⏳ progress ", bar_format="{l_bar}{bar}")
 
-    table = Table(show_header=True, header_style="bold yellow",show_lines=True)
-    table.add_column("Binary")
-    table.add_column("Version")
-    table.add_column("Path")
-    for item in tqdm(commands, desc="⏳ progress ", bar_format="{l_bar}{bar}"):
+    for item in iterable:
         if isinstance(item, str):
             if getattr(compute_args(), "filter", None) and compute_args().filter not in item:
-                continue  # passe à l'élément suivant
+                continue 
+            one=True
             name = item
             base_binary = item.split()[0]
             version_cmd = [base_binary, "--version"]
@@ -193,7 +225,8 @@ def app():
         else:
             name = item["name"]
             if getattr(compute_args(), "filter", None) and compute_args().filter not in name:
-                continue  # passe à l'élément suivant            
+                continue  
+            one=True          
             base_binary = name.split()[0]
 
             version_cmd = item.get(
@@ -222,8 +255,18 @@ def app():
         else:
             path_output = "NA"
 
-        if version != "not installed" or args.full or getattr(compute_args(), "filter", None):                      
-            table.add_row(name, color_version(version), color_path(path_output))
-
-
-    console.print(table)
+        if version != "not installed" or args.full or getattr(compute_args(), "filter", None):  
+            if not is_json:                    
+                table.add_row(name, color_version(version), color_path(path_output))
+            else:
+                json_obj["programs"].append({
+                    "name": name,
+                    "version": version,
+                    "path": path_output
+                })
+    if not is_json:
+        console.print(table)
+    else:
+        print(json.dumps(json_obj, indent=4))
+    if one == False:
+        print("⚠️  Nothing found")
