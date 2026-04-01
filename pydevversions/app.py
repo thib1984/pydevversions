@@ -147,7 +147,7 @@ commands = [
     "secretops",
     {
         "name": "ssh",
-        "version_cmd": ["ssh", "-v"]
+        "version_cmd": ["ssh", "-V"]
     },  
     "trivy",
     "wget",
@@ -202,11 +202,12 @@ def app():
         table.add_column("Version")
         table.add_column("Path")
     one = False
-    iterable = commands #if raw else tqdm(commands, desc="⏳ progress ", bar_format="{l_bar}{bar}")
-
+    iterable = commands if (raw or is_json) else tqdm(commands, desc="⏳ progress ", bar_format="{l_bar}{bar}")
+    filters = getattr(compute_args(), "filter", None)
     for item in iterable:
         if isinstance(item, str):
-            if getattr(compute_args(), "filter", None) and compute_args().filter not in item:
+            if filters and not any(f in item for f in (filters if isinstance(filters, list) else [filters])):
+
                 continue 
             one=True
             name = item
@@ -224,7 +225,8 @@ def app():
 
         else:
             name = item["name"]
-            if getattr(compute_args(), "filter", None) and compute_args().filter not in name:
+            if filters and not any(f in name for f in (filters if isinstance(filters, list) else [filters])):
+
                 continue  
             one=True          
             base_binary = name.split()[0]

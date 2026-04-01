@@ -3,7 +3,6 @@ pygitscrum argparse gestion
 """
 
 import argparse
-import sys
 import importlib.metadata
 
 def get_env_report():
@@ -88,7 +87,8 @@ Written by thib1984.
         action="store",
         type=str,
         metavar="app",
-        help="",
+        help="filter on apps",
+        nargs="+"
     )
     args = my_parser.parse_args()
     return args
