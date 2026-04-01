@@ -135,7 +135,7 @@ def app():
         table.add_column("Version")
         table.add_column("Path")
     one = False
-    iterable = commands if (raw or is_json) else tqdm(commands, desc="⏳ progress ", bar_format="{l_bar}{bar}")
+    iterable = commands if (raw or is_json) else tqdm(commands, desc="⏳ progress : ", bar_format="{desc}{percentage:3.0f}%")
     filters = getattr(compute_args(), "filter", None)
     for item in iterable:
         name = item["name"]
