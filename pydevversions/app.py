@@ -184,5 +184,3 @@ def app():
         console.print(table)
     else:
         print(json.dumps(json_obj, indent=4))
-    if one == False:
-        print("⚠️  Nothing found")

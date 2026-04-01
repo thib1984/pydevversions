@@ -24,13 +24,17 @@ commands:
   - name: fly
   - name: gcc  
   - name: git
-  - name: gradle
+  - name: gnome-shell  
   - name: google-chrome
+  - name: gradle
   - name: groovy
   - name: hadolint
 
   - name: helm
     version_cmd: ["helm", "version"]
+
+  - name: httpd
+    version_cmd: ["httpd", "-V"]
 
   - name: intellij
   - name: java
@@ -65,6 +69,7 @@ commands:
   - name: mongo
   - name: mvn
   - name: node
+  - name: nmap
   - name: npm
   - name: nvm
   - name: pip
@@ -77,6 +82,7 @@ commands:
   - name: ssh
     version_cmd: ["ssh", "-V"]
 
+  - name: sudo
   - name: trivy
   - name: wget
   - name: yarn
