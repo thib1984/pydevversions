@@ -209,7 +209,7 @@ def app():
             else:
                 json_obj["programs"].append({
                     "name": name,
-                    "version": version,
+                    "version": color_version(version),
                     "path": path_output
                 })
     if not is_json:
