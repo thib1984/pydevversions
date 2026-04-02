@@ -115,6 +115,14 @@ Written by thib1984.
         metavar="app",
         help=f"filter on categories (available: {', '.join(all_categories)})",
         nargs="+"
-    )    
+    )  
+    my_parser.add_argument(
+        "-s",
+        "--shell",
+        action="store",
+        type=str,
+        metavar="shell",
+        help="shell sruchargé"
+    )        
     args = my_parser.parse_args()
     return args

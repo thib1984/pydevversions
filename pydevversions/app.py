@@ -27,8 +27,11 @@ json_obj = {"info": {}, "programs": []}
 args = compute_args()
 raw=compute_args().raw
 is_json=compute_args().json
-shell_path = os.environ.get("SHELL", "/bin/bash")
-shell = os.path.basename(shell_path)  # "bash", "zsh", etc.
+if not compute_args().shell:
+    shell_path = os.environ.get("SHELL", "/bin/bash")
+    shell = os.path.basename(shell_path)  # "bash", "zsh", etc.
+else:
+    shell=compute_args().shell  
 if shell == "bash":
     rc_files = ["~/.bashrc"]
 elif shell == "zsh":
@@ -56,11 +59,25 @@ for key in ["date", "user", "home", "shell"]:
     else:
         json_obj["info"][key] = info[key]
   
-source_cmds = " && ".join(f"[ -f {os.path.expanduser(f)} ] && source {os.path.expanduser(f)}" for f in rc_files)
+# Choisir le mot clé de sourcing selon le shell
+source_cmd = "source" if shell in ["bash", "zsh"] else "."
+
+# Construire la commande
+source_cmds = " && ".join(
+    f"[ -f {os.path.expanduser(f)} ] && {source_cmd} {os.path.expanduser(f)}"
+    for f in rc_files
+)
 cmd = f"{source_cmds} && env"
 
+# Exécuter la commande
 result = subprocess.run([shell, "-c", cmd], capture_output=True, text=True)
-env = dict(line.split("=", 1) for line in result.stdout.splitlines() if "=" in line)
+
+# Récupérer l'environnement
+env = dict(
+    line.split("=", 1)
+    for line in result.stdout.splitlines()
+    if "=" in line
+)
 
 # Regex pour tout mot contenant une version
 word_with_version_regex = re.compile(r'\S*\d\S*')
@@ -89,42 +106,42 @@ def color_path(cell):
 
 commands = config["commands"]
 def run_command(cmd):
+    try:
+        binary = cmd[0]
+        # binaire réel
+        if shutil.which(binary):
+            result = subprocess.run(
+                cmd,
+                capture_output=True,
+                text=True,
+                env=env
+            )        
+        # alias ou fonction    
+        else:
+            check = subprocess.run(
+                [shell, "-i", "-c", f"type {binary}"],
+                capture_output=True,
+                text=True,
+                env=env
+            )
+            # fallback
+            if check.returncode != 0:
+                return "not installed"
 
-    binary = cmd[0]
-    # binaire réel
-    if shutil.which(binary):
-        result = subprocess.run(
-            cmd,
-            capture_output=True,
-            text=True,
-            env=env
-        )
-    # alias ou fonction    
-    else:
-        check = subprocess.run(
-            [shell, "-i", "-c", f"type {binary}"],
-            capture_output=True,
-            text=True,
-            env=env
-        )
+            #appel à l'alias ou la fonction via un shell dédié
+            cmd_str = " ".join(cmd)
+            result = subprocess.run(
+                [shell, "-i", "-c", cmd_str],
+                capture_output=True,
+                text=True,
+                env=env
+            )     
+        if result.returncode == 0:
+            return (result.stdout.strip() or result.stderr.strip())
         # fallback
-        if check.returncode != 0:
-            return "not installed"
-
-        #appel à l'alias ou la fonction via un shell dédié
-        cmd_str = " ".join(cmd)
-        result = subprocess.run(
-            [shell, "-i", "-c", cmd_str],
-            capture_output=True,
-            text=True,
-            env=env
-        )     
-
-    if result.returncode == 0:
-        return (result.stdout.strip() or result.stderr.strip())
-    # fallback
-    return "NA"
-
+        return "not installed"
+    except Exception:
+        return "not installed"
 def app():
     rows = []
 
