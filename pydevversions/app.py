@@ -91,7 +91,6 @@ commands = config["commands"]
 def run_command(cmd):
 
     binary = cmd[0]
-
     # binaire réel
     if shutil.which(binary):
         result = subprocess.run(
@@ -100,6 +99,7 @@ def run_command(cmd):
             text=True,
             env=env
         )
+    # alias ou fonction    
     else:
         check = subprocess.run(
             [shell, "-i", "-c", f"type {binary}"],
@@ -107,21 +107,22 @@ def run_command(cmd):
             text=True,
             env=env
         )
-
+        # fallback
         if check.returncode != 0:
             return "not installed"
 
+        #appel à l'alias ou la fonction via un shell dédié
         cmd_str = " ".join(cmd)
         result = subprocess.run(
             [shell, "-i", "-c", cmd_str],
             capture_output=True,
             text=True,
             env=env
-        )
+        )     
 
     if result.returncode == 0:
         return (result.stdout.strip() or result.stderr.strip())
-
+    # fallback
     return "NA"
 
 def app():
@@ -147,19 +148,21 @@ def app():
             c in item_categories for c in (categories if isinstance(categories, list) else [categories])
         ):
             continue          
-        one=True          
+        
+        name = item["name"]
         base_binary = name.split()[0]
 
+
+        #preparation commande pour display version
         version_cmd = item.get(
             "version_cmd",
             [base_binary, "--version"]
         )
 
-        name = item["name"]
-        base_binary = name.split()[0]
-
+        #preparation commande pour display path
         path_cmd = item.get("path_cmd")
         if path_cmd is None:
+            #gestion binaire/alias
             if shutil.which(base_binary):
                 path_cmd = ["whereis", "-b", base_binary]
             else:
@@ -170,9 +173,12 @@ def app():
                 )
                 path_cmd = ["echo", check_type.stdout.strip()]
 
+        #calcul version
         version = run_command(version_cmd)
         if version != "not installed":
-            path_output = run_command(path_cmd)
+            output = run_command(path_cmd).splitlines()
+            path_output = output[0] if output else ""
+            
         else:
             path_output = "NA"
 
