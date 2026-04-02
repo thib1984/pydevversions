@@ -122,7 +122,7 @@ Written by thib1984.
         action="store",
         type=str,
         metavar="shell",
-        help="shell sruchargé"
+        help="shell surchargé"
     )        
     args = my_parser.parse_args()
     return args

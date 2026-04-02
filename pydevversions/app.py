@@ -59,20 +59,16 @@ for key in ["date", "user", "home", "shell"]:
     else:
         json_obj["info"][key] = info[key]
   
-# Choisir le mot clé de sourcing selon le shell
 source_cmd = "source" if shell in ["bash", "zsh"] else "."
 
-# Construire la commande
 source_cmds = " && ".join(
     f"[ -f {os.path.expanduser(f)} ] && {source_cmd} {os.path.expanduser(f)}"
     for f in rc_files
 )
 cmd = f"{source_cmds} && env"
 
-# Exécuter la commande
 result = subprocess.run([shell, "-c", cmd], capture_output=True, text=True)
 
-# Récupérer l'environnement
 env = dict(
     line.split("=", 1)
     for line in result.stdout.splitlines()
