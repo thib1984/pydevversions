@@ -62,8 +62,8 @@ cmd = f"{source_cmds} && env"
 result = subprocess.run([shell, "-c", cmd], capture_output=True, text=True)
 env = dict(line.split("=", 1) for line in result.stdout.splitlines() if "=" in line)
 
-# Regex pour tout mot contenant x.y ou x.y.z
-word_with_version_regex = re.compile(r'\b\w*\d+\.\d+(?:\.\d+)?\S*\b')
+# Regex pour tout mot contenant une version
+word_with_version_regex = re.compile(r'\S*\d\S*')
 
 def color_version(cell):
     if raw:

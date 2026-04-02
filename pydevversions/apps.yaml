@@ -4,6 +4,9 @@ commands:
   - name: biome
     categories: ["development", "linting"]
 
+  - name: brew
+    categories: ["package-manager"]
+
   - name: cf
     version_cmd: ["cf", "version"]
     categories: ["devops"]
@@ -20,8 +23,13 @@ commands:
     categories: ["testing", "automation"]
 
   - name: chromium
-  
     categories: ["browser", "network"]
+
+  - name: chromium-flatpak
+    version_cmd: ["flatpak", "run", "org.chromium.Chromium", "--version"]
+    path_cmd: ["echo", "NA"]  
+    categories: ["browser", "network"]
+
   - name: code
     categories: ["development", "ide"]
 
@@ -36,8 +44,16 @@ commands:
     path_cmd: ["whereis", "-b", "docker"]
     categories: ["devops", "containers"]
 
+  - name: ds_agent
+    version_cmd: ["cat", "/opt/ds_agent/version.txt"]
+    path_cmd: ["echo", " /opt/ds_agent/ds_agent"]
+    categories: ["system", "security"]
+
   - name: firefox
     categories: ["browser", "network"]
+
+  - name: flatpak
+    categories: ["package-manager"]
 
   - name: fly
     categories: ["devops"]
@@ -76,6 +92,10 @@ commands:
 
   - name: intellij
     categories: ["development", "ide"]
+
+  - name: intune-portal
+    version_cmd: ["intune-portal", "-V"]
+    categories: ["system"]
 
   - name: java
     categories: ["language", "runtime", "development"]
@@ -116,6 +136,9 @@ commands:
   - name: make
     categories: ["build", "development"]
 
+  - name: microsoft-edge
+    categories: ["browser", "network"]
+
   - name: mongo
     categories: ["database"]
 
@@ -143,6 +166,11 @@ commands:
   - name: pipx
     categories: ["package-manager", "python", "cli"]
 
+  - name: pulsesecure
+    version_cmd: ["dpkg-query", "-W", "-f=${Version}\n", "pulsesecure"]
+    path_cmd: ["echo", "/opt/pulsesecure/bin/pulsesecure"]
+    categories: ["system"]
+
   - name: python
     categories: ["development", "runtime", "python"]
 
@@ -152,6 +180,9 @@ commands:
   - name: secretops
     categories: ["security", "devops"]
 
+  - name: flatpak
+    categories: ["package-manager"]
+    
   - name: ssh
     version_cmd: ["ssh", "-V"]
     categories: ["network", "security"]
