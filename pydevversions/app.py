@@ -82,7 +82,10 @@ word_with_version_regex = re.compile(r'\S*\d\S*')
 def color_version(cell):
     if compact:
         matches = list(re.finditer(word_with_version_regex, cell))
-        cell = " ".join(match.group(0) for match in matches)    
+        new_cell = " ".join(match.group(0) for match in matches)
+
+        if new_cell.strip():  # non vide après suppression des espaces
+            cell = new_cell
     if raw or is_json:
         return cell
     text = Text(cell)

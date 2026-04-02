@@ -91,7 +91,7 @@ commands:
     categories: ["server", "network"]
 
   - name: intellij
-    version_cmd: ["sh", "-c", "intellij --version 2>&1 | grep -v warning"]
+    version_cmd: ["sh", "-c", "intellij --version 2>/dev/null | grep -v warning"]
     categories: ["development", "ide"]
 
   - name: intune-portal
@@ -137,6 +137,9 @@ commands:
   - name: make
     categories: ["build", "development"]
 
+  - name: meld
+    categories: ["editor"]
+
   - name: microsoft-edge
     categories: ["browser", "network"]
 
@@ -145,6 +148,9 @@ commands:
 
   - name: mvn
     categories: ["build", "development"]
+
+  - name: nano
+    categories: ["editor"]
 
   - name: node
     categories: ["runtime", "js"]
@@ -193,6 +199,12 @@ commands:
 
   - name: trivy
     categories: ["security", "devops", "containers", "scanner"]
+
+  - name: vi
+    categories: ["editor"]
+
+  - name: vim
+    categories: ["editor"]
 
   - name: virtualbox
     version_cmd: ["virtualbox", "--help"]
