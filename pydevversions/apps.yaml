@@ -1,95 +1,176 @@
 commands:
   - name: bash
+    categories: ["shell", "scripting", "devops"]
   - name: biome
+    categories: ["development", "linting"]
 
   - name: cf
     version_cmd: ["cf", "version"]
+    categories: ["devops"]
 
   - name: cf7
     version_cmd: ["cf7", "version"]
+    categories: ["devops"]
 
   - name: cf8
     version_cmd: ["cf8", "version"]
+    categories: ["devops"]
 
   - name: chromedriver
-  - name: chromium  
-  - name: code
-  - name: curl
-  - name: docker
+    categories: ["testing", "automation"]
 
+  - name: chromium
+  
+    categories: ["browser", "network"]
+  - name: code
+    categories: ["development", "ide"]
+
+  - name: curl
+    categories: ["network", "devops"]
+
+  - name: docker
+    categories: ["devops", "containers"]
+    
   - name: docker compose
     version_cmd: ["docker", "compose", "version"]
     path_cmd: ["whereis", "-b", "docker"]
+    categories: ["devops", "containers"]
 
   - name: firefox
+    categories: ["browser", "network"]
+
   - name: fly
-  - name: gcc  
+    categories: ["devops"]
+
+  - name: gcc
+    categories: ["build"] 
+
   - name: git
-  - name: gnome-shell  
+    categories: ["development", "version-control"]
+
+  - name: gnome-shell
+    categories: ["system"]
+
   - name: google-chrome
+    categories: ["browser", "network"]
+
   - name: google-chrome-stable
+    categories: ["browser", "network"]
+
   - name: gradle
+    categories: ["build", "development"]
+
   - name: groovy
+    categories: ["language", "development", "scripting"]
+
   - name: hadolint
+    categories: ["linting", "devops", "containers"]
 
   - name: helm
     version_cmd: ["helm", "version"]
+    categories: ["devops", "kubernetes"]
 
   - name: httpd
     version_cmd: ["httpd", "-V"]
+    categories: ["server", "network"]
 
   - name: intellij
+    categories: ["development", "ide"]
+
   - name: java
+    categories: ["language", "runtime", "development"]
+
   - name: jq
+    categories: ["cli", "json", "scripting"]
 
   - name: kernel
     version_cmd: ["uname", "-r"]
     path_cmd: ["bash", "-c", "readlink -f /boot/vmlinuz-$(uname -r)"]
+    categories: ["system"]
 
   - name: kotlin
     version_cmd: ["kotlin", "-version"]
+    categories: ["language", "development"]
 
   - name: krew
     version_cmd: ["krew", "version"]
+    categories: ["devops", "kubernetes"]
 
   - name: kubectl
     version_cmd: ["kubectl", "version", "--client=true"]
+    categories: ["devops", "kubernetes"]
 
   - name: k9s
     version_cmd: ["k9s", "version", "-s"]
+    categories: ["devops", "kubernetes"]
 
   - name: lift
     version_cmd: ["lift", "version"]
-
-  - name: lino
+    categories: ["system"]
 
   - name: linux
     version_cmd: ["cat", "/etc/os-release"]
     path_cmd: ["echo", "/etc/os-release"]
+    categories: ["system"]
 
   - name: make
+    categories: ["build", "development"]
+
   - name: mongo
+    categories: ["database"]
+
   - name: mvn
+    categories: ["build", "development"]
+
   - name: node
+    categories: ["runtime", "js"]
+
   - name: nmap
+    categories: ["network", "security", "pentesting"]
+
   - name: npm
+    categories: ["package-manager", "js", "development"]
+
   - name: nvm
+    categories: ["version-manager", "js", "development"]
+
   - name: pip
+    categories: ["package-manager", "python", "development"]
+
   - name: pip3
+    categories: ["package-manager", "python", "development"]
+
   - name: pipx
+    categories: ["package-manager", "python", "cli"]
+
   - name: python
+    categories: ["development", "runtime", "python"]
+
   - name: python3
+    categories: ["development", "runtime", "python"]
+
   - name: secretops
+    categories: ["security", "devops"]
 
   - name: ssh
     version_cmd: ["ssh", "-V"]
+    categories: ["network", "security"]
 
   - name: sudo
+    categories: ["system", "security"]
+
   - name: trivy
+    categories: ["security", "devops", "containers", "scanner"]
 
   - name: virtualbox
     version_cmd: ["virtualbox", "--help"]
-      
+    categories: ["virtualization", "system"]
+
   - name: wget
+    categories: ["network", "cli"]
+
   - name: yarn
+    categories: ["package-manager", "javascript", "development"]
+
   - name: zsh
+    categories: ["shell", "system", "scripting"]

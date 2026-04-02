@@ -137,11 +137,16 @@ def app():
     one = False
     iterable = commands if (raw or is_json) else tqdm(commands, desc="⏳ progress : ", bar_format="{desc}{percentage:3.0f}%")
     filters = getattr(compute_args(), "filter", None)
+    categories = getattr(compute_args(), "categories", None)
     for item in iterable:
         name = item["name"]
+        item_categories = item.get("categories", [])
         if filters and not any(f in name for f in (filters if isinstance(filters, list) else [filters])):
-
-            continue  
+            continue
+        if categories and not any(
+            c in item_categories for c in (categories if isinstance(categories, list) else [categories])
+        ):
+            continue          
         one=True          
         base_binary = name.split()[0]
 

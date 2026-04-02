@@ -4,6 +4,15 @@ pygitscrum argparse gestion
 
 import argparse
 import importlib.metadata
+import yaml 
+from pathlib import Path
+
+def get_all_categories(iterable):
+    cats = set()
+    for item in iterable:
+        for c in item.get("categories", []):
+            cats.add(c)
+    return sorted(cats)
 
 def get_env_report():
     lines = []
@@ -39,6 +48,14 @@ def compute_args():
     """
     check args and return them
     """
+    BASE_DIR = Path(__file__).resolve().parent
+    yaml_path = BASE_DIR / "apps.yaml"
+
+    with open(yaml_path, "r") as f:
+        config = yaml.safe_load(f)
+
+    apps = config.get("commands", [])
+    all_categories = get_all_categories(apps)
     my_parser = argparse.ArgumentParser(
         description="pydevversions",
         epilog=f"""
@@ -90,5 +107,14 @@ Written by thib1984.
         help="filter on apps",
         nargs="+"
     )
+    my_parser.add_argument(
+        "-c",
+        "--categories",
+        action="store",
+        type=str,
+        metavar="app",
+        help=f"filter on categories (available: {', '.join(all_categories)})",
+        nargs="+"
+    )    
     args = my_parser.parse_args()
     return args
