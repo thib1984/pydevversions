@@ -27,6 +27,7 @@ json_obj = {"info": {}, "programs": []}
 args = compute_args()
 raw=compute_args().raw
 is_json=compute_args().json
+compact=compute_args().compact
 if not compute_args().shell:
     shell_path = os.environ.get("SHELL", "/bin/bash")
     shell = os.path.basename(shell_path)  # "bash", "zsh", etc.
@@ -79,7 +80,10 @@ env = dict(
 word_with_version_regex = re.compile(r'\S*\d\S*')
 
 def color_version(cell):
-    if raw:
+    if compact:
+        matches = list(re.finditer(word_with_version_regex, cell))
+        cell = " ".join(match.group(0) for match in matches)    
+    if raw or is_json:
         return cell
     text = Text(cell)
     if cell=="not installed":
@@ -90,7 +94,7 @@ def color_version(cell):
     return text
 
 def color_path(cell):
-    if raw:
+    if raw or is_json:
         return cell    
     text = Text(cell)
     if cell=="NA":
@@ -187,7 +191,11 @@ def app():
                 path_cmd = ["echo", check_type.stdout.strip()]
 
         #calcul version
-        version = run_command(version_cmd)
+        if not compute_args().compact:
+            version = run_command(version_cmd)
+        else:
+            version_tmp = run_command(version_cmd).splitlines()
+            version = version_tmp[0] if version_tmp else ""                
         if version != "not installed":
             output = run_command(path_cmd).splitlines()
             path_output = output[0] if output else ""

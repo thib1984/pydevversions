@@ -27,7 +27,7 @@ commands:
 
   - name: chromium-flatpak
     version_cmd: ["flatpak", "run", "org.chromium.Chromium", "--version"]
-    path_cmd: ["echo", "NA"]  
+    path_cmd: ["whereis", "flatpak"]  
     categories: ["browser", "network"]
 
   - name: code
@@ -91,6 +91,7 @@ commands:
     categories: ["server", "network"]
 
   - name: intellij
+    version_cmd: ["sh", "-c", "intellij --version 2>&1 | grep -v warning"]
     categories: ["development", "ide"]
 
   - name: intune-portal

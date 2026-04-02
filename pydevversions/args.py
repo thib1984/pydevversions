@@ -115,7 +115,12 @@ Written by thib1984.
         metavar="app",
         help=f"filter on categories (available: {', '.join(all_categories)})",
         nargs="+"
-    )  
+    )
+    my_parser.add_argument(
+        "--compact",
+        action="store_true",
+        help="compact output with minimal version info",
+    )        
     my_parser.add_argument(
         "-s",
         "--shell",
