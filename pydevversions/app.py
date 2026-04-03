@@ -10,21 +10,61 @@ import re
 from rich.console import Console
 from rich.table import Table
 from rich.text import Text
-from pydevversions.args import compute_args
+from pydevversions.args import compute_args, get_all_categories
 from datetime import datetime
 import getpass
 import json
 import yaml
 from pathlib import Path
+import sys
 
 BASE_DIR = Path(__file__).resolve().parent
 yaml_path = BASE_DIR / "apps.yaml"
+
+with open(yaml_path, "r") as f:
+    config = yaml.safe_load(f)
+
+apps = config.get("commands", [])
+command_names = [cmd["name"] for cmd in apps]
 json_obj = {"info": {}, "programs": []}
 args = compute_args()
 raw=compute_args().raw
 is_json=compute_args().json
 compact=compute_args().compact
 debug=compute_args().debug
+filters = getattr(compute_args(), "filter", None)
+category = getattr(compute_args(), "category", None)
+
+all_categories = set()
+for cmd in apps:
+    cats = cmd.get("categories", [])
+    all_categories.update(cats)
+
+if category is not None and category not in all_categories:
+    message = "Error: non-existent category. Available category are " + ", ".join(sorted(all_categories))
+    if not raw:
+        message = "⚠️  " + message
+    sys.exit(message)
+
+if category is not None:
+    filtered_apps = [cmd for cmd in apps if category in cmd.get("category", [])]
+else:
+    filtered_apps = apps
+
+filtered_command_names = [cmd["name"] for cmd in filtered_apps]
+
+if filters is not None:
+    invalid = [f for f in filters if f not in filtered_command_names]
+    if invalid:
+        message = (
+            "Error: non-existent application(s): "
+            + ", ".join(invalid)
+            + ". Available applications: "
+            + ", ".join(filtered_command_names)
+        )
+        if not raw:
+            message = "⚠️  " + message
+        sys.exit(message)
 
 with open(yaml_path, "r") as f:
     config = yaml.safe_load(f)
@@ -39,11 +79,14 @@ if shell == "bash":
 elif shell == "zsh":
     rc_files = ["~/.zshrc"]
 else:
-    rc_files = ["~/.profile"]
+    message = "Erreur : shell différent de zsh ou bash"
+    if not raw:
+        message = "⚠️  " + message
+    sys.exit(message)
 
 
   
-source_cmd = "source" if shell in ["bash", "zsh"] else "."
+source_cmd = "source"
 
 source_cmds = " && ".join(
     f"[ -f {os.path.expanduser(f)} ] && {source_cmd} {os.path.expanduser(f)}"
@@ -58,20 +101,6 @@ env = dict(
     for line in result.stdout.splitlines()
     if "=" in line
 )
-# Ajout manuel si nécessaire
-# Détecte si on est sur Wayland ou X11
-if "WAYLAND_DISPLAY" in env:
-    # Wayland
-    env["GDK_BACKEND"] = "wayland"
-    env["DISPLAY"] = ""  # pas nécessaire sous Wayland
-elif "DISPLAY" in env:
-    # X11
-    env["GDK_BACKEND"] = "x11"
-    # DISPLAY est déjà défini dans l'environnement
-else:
-    # Pas d'environnement graphique connu, définir un DISPLAY par défaut
-    env["DISPLAY"] = ":0"
-    env["GDK_BACKEND"] = "x11"
 
 # Regex pour tout mot contenant une version
 word_with_version_regex = re.compile(r'\S*\d\S*')
@@ -202,8 +231,7 @@ def app():
         bar_format="{desc}{percentage:3.0f}% {postfix}"
     ) if use_tqdm else commands
 
-    filters = getattr(compute_args(), "filter", None)
-    categories = getattr(compute_args(), "categories", None)
+
 
     for item in iterable:
         name = item["name"]
@@ -212,8 +240,8 @@ def app():
         item_categories = item.get("categories", [])
         if filters and not any(f in name for f in (filters if isinstance(filters, list) else [filters])):
             continue
-        if categories and not any(
-            c in item_categories for c in (categories if isinstance(categories, list) else [categories])
+        if category and not any(
+            c in item_categories for c in (category if isinstance(category, list) else [category])
         ):
             continue          
         if use_tqdm:

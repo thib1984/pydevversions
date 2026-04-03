@@ -10,7 +10,7 @@ from pathlib import Path
 def get_all_categories(iterable):
     cats = set()
     for item in iterable:
-        for c in item.get("categories", []):
+        for c in item.get("category", []):
             cats.add(c)
     return sorted(cats)
 
@@ -56,6 +56,7 @@ def compute_args():
 
     apps = config.get("commands", [])
     all_categories = get_all_categories(apps)
+    all_apps = [cmd["name"] for cmd in apps]
     my_parser = argparse.ArgumentParser(
         description="pydevversions",
         epilog=f"""
@@ -104,17 +105,16 @@ Written by thib1984.
         action="store",
         type=str,
         metavar="app",
-        help="filter on apps",
+        help=f"filter on apps (available: {', '.join(all_apps)})",
         nargs="+"
     )
     my_parser.add_argument(
         "-c",
-        "--categories",
+        "--category",
         action="store",
         type=str,
         metavar="app",
-        help=f"filter on categories (available: {', '.join(all_categories)})",
-        nargs="+"
+        help=f"filter on category (available: {', '.join(all_categories)})",
     )
     my_parser.add_argument(
         "--compact",
