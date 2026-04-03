@@ -19,16 +19,16 @@ from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent
 yaml_path = BASE_DIR / "apps.yaml"
-
-with open(yaml_path, "r") as f:
-    config = yaml.safe_load(f)
-
 json_obj = {"info": {}, "programs": []}
 args = compute_args()
 raw=compute_args().raw
 is_json=compute_args().json
 compact=compute_args().compact
 debug=compute_args().debug
+
+with open(yaml_path, "r") as f:
+    config = yaml.safe_load(f)
+
 if not compute_args().shell:
     shell_path = os.environ.get("SHELL", "/bin/bash")
     shell = os.path.basename(shell_path)  # "bash", "zsh", etc.
@@ -41,25 +41,7 @@ elif shell == "zsh":
 else:
     rc_files = ["~/.profile"]
 
-labels = {
-    "date": "date" if raw else "📅 date",
-    "user": "user" if raw else "👤 user",
-    "home": "home" if raw else "🏠 home",
-    "shell": "shell" if raw else "💻 shell",
-}
 
-# Affichage
-info = {
-    "date": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-    "user": getpass.getuser(),
-    "home": os.path.expanduser("~"),
-    "shell": shell,
-}
-for key in ["date", "user", "home", "shell"]:
-    if not is_json:
-        print(f"{labels[key]:<10} : {info[key]}")
-    else:
-        json_obj["info"][key] = info[key]
   
 source_cmd = "source" if shell in ["bash", "zsh"] else "."
 
@@ -76,6 +58,8 @@ env = dict(
     for line in result.stdout.splitlines()
     if "=" in line
 )
+# Ajout manuel si nécessaire
+env["DISPLAY"] = env.get("DISPLAY", os.environ.get("DISPLAY", ":0"))
 
 # Regex pour tout mot contenant une version
 word_with_version_regex = re.compile(r'\S*\d\S*')
@@ -170,7 +154,25 @@ def run_command(cmd):
             print(e)
         return "not installed"
 def app():
+    labels = {
+        "date": "date" if raw else "📅 date",
+        "user": "user" if raw else "👤 user",
+        "home": "home" if raw else "🏠 home",
+        "shell": "shell" if raw else "💻 shell",
+    }
 
+    # Affichage
+    info = {
+        "date": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "user": getpass.getuser(),
+        "home": os.path.expanduser("~"),
+        "shell": shell,
+    }
+    for key in ["date", "user", "home", "shell"]:
+        if not is_json:
+            print(f"{labels[key]:<10} : {info[key]}")
+        else:
+            json_obj["info"][key] = info[key]
     console = Console()
     header_style = "bold yellow" if not raw else None
 
