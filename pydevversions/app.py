@@ -59,7 +59,19 @@ env = dict(
     if "=" in line
 )
 # Ajout manuel si nécessaire
-env["DISPLAY"] = env.get("DISPLAY", os.environ.get("DISPLAY", ":0"))
+# Détecte si on est sur Wayland ou X11
+if "WAYLAND_DISPLAY" in env:
+    # Wayland
+    env["GDK_BACKEND"] = "wayland"
+    env["DISPLAY"] = ""  # pas nécessaire sous Wayland
+elif "DISPLAY" in env:
+    # X11
+    env["GDK_BACKEND"] = "x11"
+    # DISPLAY est déjà défini dans l'environnement
+else:
+    # Pas d'environnement graphique connu, définir un DISPLAY par défaut
+    env["DISPLAY"] = ":0"
+    env["GDK_BACKEND"] = "x11"
 
 # Regex pour tout mot contenant une version
 word_with_version_regex = re.compile(r'\S*\d\S*')
