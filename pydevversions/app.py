@@ -28,6 +28,7 @@ args = compute_args()
 raw=compute_args().raw
 is_json=compute_args().json
 compact=compute_args().compact
+debug=compute_args().debug
 if not compute_args().shell:
     shell_path = os.environ.get("SHELL", "/bin/bash")
     shell = os.path.basename(shell_path)  # "bash", "zsh", etc.
@@ -129,6 +130,12 @@ def run_command(cmd):
             )
             # fallback
             if check.returncode != 0:
+                if debug:
+                    print("")
+                    print([shell, "-i", "-c", f"type {binary}"])
+                    print(f"CODE    : {check.returncode}")
+                    print(f"STDOUT  : {check.stdout}")
+                    print(f"STDERR  : {check.stderr}")               
                 return "not installed"
 
             #appel à l'alias ou la fonction via un shell dédié
@@ -141,26 +148,46 @@ def run_command(cmd):
             )     
         if result.returncode == 0:
             return (result.stdout.strip() or result.stderr.strip())
+        if debug:
+            print("")
+            print([shell, "-i", "-c", cmd_str])
+            print(f"CODE    : {result.returncode}")
+            print(f"STDOUT  : {result.stdout}")
+            print(f"STDERR  : {result.stderr}")                         
+
         # fallback
         return "not installed"
-    except Exception:
+    except Exception as e:
+        if debug:
+            print(e)
         return "not installed"
 def app():
-    rows = []
 
     console = Console()
     header_style = "bold yellow" if not raw else None
+
     if not is_json:
-        table = Table(show_header=True, header_style=header_style,show_lines=True)
+        table = Table(show_header=True, header_style=header_style, show_lines=True)
         table.add_column("Binary")
         table.add_column("Version")
         table.add_column("Path")
-    one = False
-    iterable = commands if (raw or is_json) else tqdm(commands, desc="⏳ progress : ", bar_format="{desc}{percentage:3.0f}%")
+
+    use_tqdm = not (raw or is_json or debug)
+
+    iterable = tqdm(
+        commands,
+        desc="⏳ progress : ",
+        bar_format="{desc}{percentage:3.0f}% {postfix}"
+    ) if use_tqdm else commands
+
     filters = getattr(compute_args(), "filter", None)
     categories = getattr(compute_args(), "categories", None)
+
     for item in iterable:
         name = item["name"]
+
+        if use_tqdm:
+            iterable.set_postfix_str(name)
         item_categories = item.get("categories", [])
         if filters and not any(f in name for f in (filters if isinstance(filters, list) else [filters])):
             continue
@@ -198,7 +225,7 @@ def app():
             version = run_command(version_cmd)
         else:
             version_tmp = run_command(version_cmd).splitlines()
-            version = version_tmp[0] if version_tmp else ""                
+            version = "\n".join(version_tmp[:5])               
         if version != "not installed":
             output = run_command(path_cmd).splitlines()
             path_output = output[0] if output else ""

@@ -120,7 +120,12 @@ Written by thib1984.
         "--compact",
         action="store_true",
         help="compact output with minimal version info",
-    )        
+    )
+    my_parser.add_argument(
+        "--debug",
+        action="store_true",
+        help="debug mode",
+    )               
     my_parser.add_argument(
         "-s",
         "--shell",
