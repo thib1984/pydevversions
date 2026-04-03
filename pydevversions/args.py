@@ -10,7 +10,7 @@ from pathlib import Path
 def get_all_categories(iterable):
     cats = set()
     for item in iterable:
-        for c in item.get("category", []):
+        for c in item.get("categories", []):
             cats.add(c)
     return sorted(cats)
 

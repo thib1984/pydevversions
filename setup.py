@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name="pydevversions",
-    version="1.5.0",
+    version="1.5.1",
     description="pydevversions game in terminal",
     long_description="The complete description/installation/use/FAQ is available at : https://github.com/thib1984/pydevversions#readme",
     url="https://github.com/thib1984/pydevversions",
