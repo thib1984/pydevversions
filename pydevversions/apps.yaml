@@ -8,6 +8,9 @@ commands:
   - name: brew
     categories: ["package-manager"]
 
+  - name: cargo
+    categories: ["language", "runtime"]
+
   - name: cf
     version_cmd: ["cf", "version"]
     categories: ["devops"]
@@ -36,6 +39,10 @@ commands:
 
   - name: curl
     categories: ["network", "devops"]
+
+  - name: dig
+    version_cmd: ["dig", "-v"]
+    categories: ["network"]
 
   - name: docker
     categories: ["devops", "containers"]
@@ -68,6 +75,10 @@ commands:
   - name: gnome-shell
     categories: ["system"]
 
+  - name: go
+    version_cmd: ["go", "version"]  
+    categories: ["language", "runtime", "development"]
+
   - name: google-chrome
     categories: ["browser", "network"]
 
@@ -87,9 +98,16 @@ commands:
     version_cmd: ["helm", "version"]
     categories: ["devops", "kubernetes"]
 
+  - name: host
+    version_cmd: ["host", "-V"]
+    categories: ["network"]
+
   - name: httpd
     version_cmd: ["httpd", "-V"]
     categories: ["server", "network"]
+
+  - name: httpie
+    categories: ["network"]
 
   - name: intellij
     version_cmd: ["sh", "-c", "intellij --version 2>/dev/null | grep -v warning"]
@@ -153,6 +171,10 @@ commands:
   - name: nano
     categories: ["editor"]
 
+  - name: nc
+    version_cmd: ["nc", "-h"]
+    categories: ["network"]
+
   - name: node
     categories: ["runtime", "js"]
 
@@ -188,6 +210,12 @@ commands:
   - name: secretops
     categories: ["security", "devops"]
 
+  - name: rustc
+    categories: ["language", "runtime"]
+
+  - name: rustfmt
+    categories: ["language", "runtime"]
+
   - name: flatpak
     categories: ["package-manager"]
     
@@ -197,6 +225,9 @@ commands:
 
   - name: sudo
     categories: ["system", "security"]
+    
+  - name: telnet
+    categories: ["network"]
 
   - name: trivy
     categories: ["security", "devops", "containers", "scanner"]
