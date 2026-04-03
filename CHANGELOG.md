@@ -6,4 +6,5 @@
 - [x] add app running
 - [x] limit to zsh or bash
 - [x] use which instead of whereis
-- [ ] test category and app exists
+- [x] test category and app exists
+- [x] fix description
