@@ -58,7 +58,7 @@ def compute_args():
     all_categories = get_all_categories(apps)
     all_apps = [cmd["name"] for cmd in apps]
     my_parser = argparse.ArgumentParser(
-        description="pydevversions",
+        description="pydevversions displays versions and paths of a collection of apps in the terminal",
         epilog=f"""
 To upgrade, run:
     pipx upgrade pydevversions
