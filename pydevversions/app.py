@@ -119,7 +119,15 @@ def run_command(cmd):
                 capture_output=True,
                 text=True,
                 env=env
-            )        
+            )    
+            if result.returncode == 0:
+                return (result.stdout.strip() or result.stderr.strip())
+            if debug:
+                print("")
+                print(cmd)
+                print(f"CODE    : {result.returncode}")
+                print(f"STDOUT  : {result.stdout}")
+                print(f"STDERR  : {result.stderr}")                   
         # alias ou fonction    
         else:
             check = subprocess.run(
@@ -146,14 +154,14 @@ def run_command(cmd):
                 text=True,
                 env=env
             )     
-        if result.returncode == 0:
-            return (result.stdout.strip() or result.stderr.strip())
-        if debug:
-            print("")
-            print([shell, "-i", "-c", cmd_str])
-            print(f"CODE    : {result.returncode}")
-            print(f"STDOUT  : {result.stdout}")
-            print(f"STDERR  : {result.stderr}")                         
+            if result.returncode == 0:
+                return (result.stdout.strip() or result.stderr.strip())
+            if debug:
+                print("")
+                print([shell, "-i", "-c", cmd_str])
+                print(f"CODE    : {result.returncode}")
+                print(f"STDOUT  : {result.stdout}")
+                print(f"STDERR  : {result.stderr}")                         
 
         # fallback
         return "not installed"
@@ -185,9 +193,8 @@ def app():
 
     for item in iterable:
         name = item["name"]
+        base_binary = name.split()[0]
 
-        if use_tqdm:
-            iterable.set_postfix_str(name)
         item_categories = item.get("categories", [])
         if filters and not any(f in name for f in (filters if isinstance(filters, list) else [filters])):
             continue
@@ -195,9 +202,9 @@ def app():
             c in item_categories for c in (categories if isinstance(categories, list) else [categories])
         ):
             continue          
+        if use_tqdm:
+            iterable.set_postfix_str(base_binary)
         
-        name = item["name"]
-        base_binary = name.split()[0]
 
 
         #preparation commande pour display version
