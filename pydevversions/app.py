@@ -260,7 +260,7 @@ def app():
         if path_cmd is None:
             #gestion binaire/alias
             if shutil.which(base_binary):
-                path_cmd = ["whereis", "-b", base_binary]
+                path_cmd = ["which", base_binary]
             else:
                 check_type = subprocess.run(
                     [shell, "-i", "-c", f"type {base_binary}"],

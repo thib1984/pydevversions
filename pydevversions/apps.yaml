@@ -1,7 +1,7 @@
 commands:
   - name: bash
     categories: ["shell", "scripting", "devops"]
-    
+
   - name: biome
     categories: ["development", "linting"]
 
@@ -42,7 +42,7 @@ commands:
     
   - name: docker compose
     version_cmd: ["docker", "compose", "version"]
-    path_cmd: ["whereis", "-b", "docker"]
+    path_cmd: ["which", "docker"]
     categories: ["devops", "containers"]
 
   - name: ds_agent
