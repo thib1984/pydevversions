@@ -2,34 +2,47 @@
 pydevversions use case
 """
 
+from pydevversions.args import compute_args, get_all_categories
+
 from tqdm import tqdm
-import subprocess
-import shutil
-import re
 from rich.console import Console
 from rich.table import Table
 from rich.text import Text
-from pydevversions.args import compute_args, get_all_categories
 from datetime import datetime
+from pathlib import Path
+
+import subprocess
+import shutil
+import re
 import getpass
 import json
 import yaml
-from pathlib import Path
 import sys
 import os
 import getpass
-import platform
-from datetime import datetime
 import psutil
-
-import os
-import glob
-import subprocess
-
 import platform
-import distro  # pip install distro
+import distro 
 
-
+def get_gpu_info_linux():
+    try:
+        result = subprocess.run(
+            ["lspci"],
+            capture_output=True,
+            text=True,
+            check=True
+        )
+        gpus = []
+        for line in result.stdout.splitlines():
+            if "VGA compatible controller" in line or "3D controller" in line:
+                name = line.split(":")[-1].strip()
+                gpus.append(name)
+        return ", ".join(gpus) if gpus else ["No GPU detected"]
+    except FileNotFoundError:
+        return ["not available (lspci not installed)"]
+    except subprocess.CalledProcessError:
+        return ["not available (error running lspci)"]
+    
 def secure_boot_status():
     try:
         output = subprocess.check_output(["mokutil", "--sb-state"], text=True, stderr=subprocess.DEVNULL)
@@ -42,7 +55,8 @@ def secure_boot_status():
     except FileNotFoundError:
         return "not available (mokutil is not installed)"
     except Exception:
-        return "not available"
+        return "not available (error running mokutil)"
+    
 def disk_encryption_status():
     try:
         result = subprocess.run(
@@ -52,116 +66,16 @@ def disk_encryption_status():
             check=True
         )
         output = result.stdout.lower()
-        # Vérifie si "crypto" apparaît dans la sortie
         if "crypto" in output:
             return "encrypted"
         else:
             return "not encrypted"
     except FileNotFoundError:
-        return "lsblk not installed"
+        return "not available (lsblk not installed)"
     except subprocess.CalledProcessError:
-        return "error running lsblk"
-    
-BASE_DIR = Path(__file__).resolve().parent
-yaml_path = BASE_DIR / "apps.yaml"
+        return "not available (error running lsblk)"
 
-with open(yaml_path, "r") as f:
-    config = yaml.safe_load(f)
-
-apps = config.get("commands", [])
-command_names = [cmd["name"] for cmd in apps]
-json_obj = {"info": {}, "programs": []}
-args = compute_args()
-raw=compute_args().raw
-is_json=compute_args().json
-compact=compute_args().compact
-debug=compute_args().debug
-noinfo=compute_args().noinfo
-noprogress=compute_args().noprogress
-noprograms=compute_args().noprograms
-filters = getattr(compute_args(), "filter", None)
-categories = getattr(compute_args(), "categories", None)
-
-all_categories = set()
-for cmd in apps:
-    cats = cmd.get("categories", [])
-    all_categories.update(cats)
-
-if categories is not None:
-    invalid = [cat for cat in categories if cat not in all_categories]
-    if invalid:
-        message = (
-            "Error: non-existent category: "
-            + ", ".join(invalid)
-            + ". Available category are "
-            + ", ".join(sorted(all_categories))
-        )
-        if not raw:
-            message = "⚠️  " + message
-        sys.exit(message)
-
-if categories is not None:
-    filtered_apps = [
-        cmd for cmd in apps
-        if any(cat in cmd.get("categories", []) for cat in categories)]
-else:
-    filtered_apps = apps
-
-filtered_command_names = [cmd["name"] for cmd in filtered_apps]
-if filters is not None:
-    invalid = [f for f in filters if f not in filtered_command_names]
-    if invalid:
-        message = (
-            "Error: non-existent application(s): "
-            + ", ".join(invalid)
-            + ". Available applications: "
-            + ", ".join(filtered_command_names)
-        )
-        if not raw:
-            message = "⚠️  " + message
-        sys.exit(message)
-commands_filtered = [cmd for cmd in filtered_apps if not filters or cmd["name"] in filters]
-
-with open(yaml_path, "r") as f:
-    config = yaml.safe_load(f)
-
-if not compute_args().shell:
-    shell_path = os.environ.get("SHELL", "/bin/bash")
-    shell = os.path.basename(shell_path)  # "bash", "zsh", etc.
-else:
-    shell=compute_args().shell  
-if shell == "bash":
-    rc_files = ["~/.bashrc"]
-elif shell == "zsh":
-    rc_files = ["~/.zshrc"]
-else:
-    message = "Erreur : shell différent de zsh ou bash"
-    if not raw:
-        message = "⚠️  " + message
-    sys.exit(message)
-
-
-  
-source_cmd = "source"
-
-source_cmds = " && ".join(
-    f"[ -f {os.path.expanduser(f)} ] && {source_cmd} {os.path.expanduser(f)}"
-    for f in rc_files
-)
-cmd = f"{source_cmds} && env"
-
-result = subprocess.run([shell, "-c", cmd], capture_output=True, text=True)
-
-env = dict(
-    line.split("=", 1)
-    for line in result.stdout.splitlines()
-    if "=" in line
-)
-
-# Regex pour tout mot contenant une version
-word_with_version_regex = re.compile(r'\S*\d\S*')
-
-def color_version(cell):
+def rework_version(cell):
     if compact:
         matches = list(re.finditer(word_with_version_regex, cell))
         new_cell = " ".join(match.group(0) for match in matches)
@@ -187,9 +101,6 @@ def color_path(cell):
         return text
     return cell
 
-
-
-commands = config["commands"]
 def run_command(cmd):
     try:
         binary = cmd[0]
@@ -260,7 +171,112 @@ def get_cpu_name():
     except:
         return "unknown"
 
- 
+def format_bytes(size):
+    if size is None:
+        return "unknown"
+    for unit in ['B', 'KB', 'MB', 'GB', 'TB']:
+        if size < 1024:
+            return f"{size:.2f} {unit}"
+        size /= 1024
+
+def display_server():
+    if os.environ.get("WAYLAND_DISPLAY"):
+        return "Wayland"
+    elif os.environ.get("DISPLAY"):
+        return "X11"
+    else:
+        return "unknown"
+    
+BASE_DIR = Path(__file__).resolve().parent
+yaml_path = BASE_DIR / "apps.yaml"
+word_with_version_regex = re.compile(r'\S*\d\S*')
+
+args = compute_args()
+raw=compute_args().raw
+is_json=compute_args().json
+compact=compute_args().compact
+debug=compute_args().debug
+noinfo=compute_args().noinfo
+noprogress=compute_args().noprogress
+noprograms=compute_args().noprograms
+filters = getattr(compute_args(), "filter", None)
+categories = getattr(compute_args(), "categories", None)
+
+json_obj = {}
+if not noinfo:
+    json_obj["info"] = {}
+if not noprograms:
+    json_obj["programs"] = []
+
+with open(yaml_path, "r") as f:
+    config = yaml.safe_load(f)
+apps = config.get("commands", [])
+command_names = [cmd["name"] for cmd in apps]
+all_categories = set()
+for cmd in apps:
+    cats = cmd.get("categories", [])
+    all_categories.update(cats)
+if categories is not None:
+    invalid = [cat for cat in categories if cat not in all_categories]
+    if invalid:
+        message = (
+            "Error: non-existent category: "
+            + ", ".join(invalid)
+            + ". Available category are "
+            + ", ".join(sorted(all_categories))
+        )
+        if not raw:
+            message = "⚠️  " + message
+        sys.exit(message)
+if categories is not None:
+    filtered_apps = [
+        cmd for cmd in apps
+        if any(cat in cmd.get("categories", []) for cat in categories)]
+else:
+    filtered_apps = apps
+filtered_command_names = [cmd["name"] for cmd in filtered_apps]
+if filters is not None:
+    invalid = [f for f in filters if f not in filtered_command_names]
+    if invalid:
+        message = (
+            "Error: non-existent application(s): "
+            + ", ".join(invalid)
+            + ". Available applications: "
+            + ", ".join(filtered_command_names)
+        )
+        if not raw:
+            message = "⚠️  " + message
+        sys.exit(message)
+commands_filtered = [cmd for cmd in filtered_apps if not filters or cmd["name"] in filters]
+
+
+if not compute_args().shell:
+    shell_path = os.environ.get("SHELL", "/bin/bash")
+    shell = os.path.basename(shell_path) 
+else:
+    shell=compute_args().shell  
+if shell == "bash":
+    rc_files = ["~/.bashrc"]
+elif shell == "zsh":
+    rc_files = ["~/.zshrc"]
+else:
+    message = "Erreur : shell not in bash,zsh"
+    if not raw:
+        message = "⚠️  " + message
+    sys.exit(message)
+source_cmd = "source"
+source_cmds = " && ".join(
+    f"[ -f {os.path.expanduser(f)} ] && {source_cmd} {os.path.expanduser(f)}"
+    for f in rc_files
+)
+cmd = f"{source_cmds} && env"
+result = subprocess.run([shell, "-c", cmd], capture_output=True, text=True)
+env = dict(
+    line.split("=", 1)
+    for line in result.stdout.splitlines()
+    if "=" in line
+)
+
 
 def app():
     if not noinfo:
@@ -272,10 +288,12 @@ def app():
             "shell": "shell" if raw else "💻 shell",
             "cpu": "cpu" if raw else "🧠 cpu",
             "ram": "ram" if raw else "⚡ ram",
+            "video": "video" if raw else "🎮 video",
             "disk": "disk" if raw else "💾 disk",
             "os": "os" if raw else "💻  os",
             "secureboot": "SecureBoot" if raw else "🔐 SecureBoot",
-            "diskcrypto": "Disk Crypto" if raw else "🔐 Disk Crypto",            
+            "diskcrypto": "Disk Crypto" if raw else "🔐 Disk Crypto",
+            "display": "Display" if raw else "💻 Display",            
         }
 
         cpu_name = get_cpu_name()
@@ -288,14 +306,6 @@ def app():
         else:
             ram_total = disk_total = None
 
-        def format_bytes(size):
-            if size is None:
-                return "unknown"
-            for unit in ['B', 'KB', 'MB', 'GB', 'TB']:
-                if size < 1024:
-                    return f"{size:.2f} {unit}"
-                size /= 1024
-
         os_info = f"{distro.name()} {distro.version()} ({platform.release()})"
 
         info = {
@@ -306,11 +316,13 @@ def app():
             "cpu": f"{cpu_name} ({cpu_cores} cores {freq.max/1000:.2f} GHz)",
             "ram": format_bytes(ram_total),
             "disk": format_bytes(disk_total),
+            "video": get_gpu_info_linux(),
             "os": os_info,
             "secureboot": secure_boot_status(),
-            "diskcrypto": disk_encryption_status(),            
+            "diskcrypto": disk_encryption_status(),  
+            "display": display_server(),           
         }
-        for key in ["date", "user", "home", "shell", "cpu", "ram", "disk", "os", "secureboot", "diskcrypto"]:
+        for key in ["date", "user", "home", "shell", "cpu", "ram", "disk", "video", "os", "secureboot", "diskcrypto", "display"]:
             if not is_json:
                 print(f"{labels[key]:<15} : {info[key]}")
             else:
@@ -348,8 +360,6 @@ def app():
             if use_tqdm:
                 iterable.set_postfix_str(base_binary)
             
-
-
             #preparation commande pour display version
             version_cmd = item.get(
                 "version_cmd",
@@ -385,11 +395,11 @@ def app():
 
             if version != "not installed" or args.full or getattr(compute_args(), "filter", None):  
                 if not is_json:                    
-                    table.add_row(name, color_version(version), color_path(path_output))
+                    table.add_row(name, rework_version(version), color_path(path_output))
                 else:
                     json_obj["programs"].append({
                         "name": name,
-                        "version": color_version(version),
+                        "version": rework_version(version),
                         "path": path_output
                     })
         if not is_json:
