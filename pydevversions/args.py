@@ -110,11 +110,12 @@ Written by thib1984.
     )
     my_parser.add_argument(
         "-c",
-        "--category",
+        "--categories",
         action="store",
         type=str,
         metavar="app",
-        help=f"filter on category (available: {', '.join(all_categories)})",
+        help=f"filter on categories (available: {', '.join(all_categories)})",
+        nargs="+"        
     )
     my_parser.add_argument(
         "--compact",
@@ -125,7 +126,22 @@ Written by thib1984.
         "--debug",
         action="store_true",
         help="debug mode",
-    )               
+    ) 
+    my_parser.add_argument(
+        "--noinfo",
+        action="store_true",
+        help="disable info bloc",
+    )
+    my_parser.add_argument(
+        "--noprogress",
+        action="store_true",
+        help="disable progress bar",
+    )
+    my_parser.add_argument(
+        "--noprograms",
+        action="store_true",
+        help="disable programs info",
+    )                                  
     my_parser.add_argument(
         "-s",
         "--shell",

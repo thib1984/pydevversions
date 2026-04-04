@@ -9,8 +9,8 @@
 - [x] test category and app exists
 - [x] fix description
 - [ ] search in flatpak for fallback
-- [ ] mot complet uniquement pour -f
-- [ ] multi categorie possible
-- [ ] add cpu/ram/dd etc dans info
+- [x] mot complet uniquement pour -f
+- [x] multi categorie possible
+- [x] add cpu/ram/dd etc dans info
 - [ ] add apps_custom.yaml
 

@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name="pydevversions",
-    version="1.6.2",
+    version="2.0.0",
     description="Displays versions and paths of a collection of apps in the terminal",
     long_description="The complete description/installation/use/FAQ is available at : https://github.com/thib1984/pydevversions#readme",
     url="https://github.com/thib1984/pydevversions",
@@ -11,7 +11,7 @@ setup(
     license="MIT",
     license_files="LICENSE.txt",
     packages=["pydevversions"],
-    install_requires=["tqdm", "rich", "pyyaml"],
+    install_requires=["tqdm", "rich", "pyyaml", "psutil", "distro"],
     zip_safe=False,
     entry_points={
         "console_scripts": [
