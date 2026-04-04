@@ -158,6 +158,9 @@ commands:
     version_cmd: ["k9s", "version", "-s"]
     categories: ["devops", "kubernetes"]
 
+  - name: LibreWolf
+    categories: ["browser", "network"]
+
   - name: lift
     version_cmd: ["lift", "version"]
     categories: ["system"]
@@ -246,6 +249,9 @@ commands:
   - name: telnet
     categories: ["network"]
 
+  - name: torbrowser-launcher
+    categories: ["browser"]
+    
   - name: trivy
     categories: ["security", "devops", "containers", "scanner"]
 

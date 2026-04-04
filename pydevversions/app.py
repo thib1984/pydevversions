@@ -135,7 +135,87 @@ def run_command(cmd):
                     print([shell, "-i", "-c", f"type {binary}"])
                     print(f"CODE    : {check.returncode}")
                     print(f"STDOUT  : {check.stdout}")
-                    print(f"STDERR  : {check.stderr}")               
+                    print(f"STDERR  : {check.stderr}") 
+
+
+                flatpak_check_user = subprocess.run(
+                    ["flatpak", "--user", "list", "--app", "--columns=application"],
+                    capture_output=True,
+                    text=True
+                )
+                user=False
+                if flatpak_check_user.returncode == 0:
+                    apps = flatpak_check_user.stdout.splitlines()
+
+                    for app in apps:
+                        if binary.lower() in app.lower():
+
+                            info_check = subprocess.run(
+                                ["flatpak", "--user", "info", app],
+                                capture_output=True,
+                                text=True
+                            )
+
+                            version = None
+
+                            if info_check.returncode == 0:
+                                if not compact:
+                                    return info_check.stdout
+                                for line in info_check.stdout.splitlines():
+                                    if line.lstrip().lower(). startswith("version"):
+
+                                        version = line.split(":", 1)[1].strip()
+                                        user=True
+                                        break
+
+                            if version:
+                                return f"{version}"
+                            else:
+                                return "not available"
+
+
+                else:
+                    if debug:
+                        print("Flatpak list failed")
+                        print(f"CODE    : {flatpak_check_user.returncode}")
+                        print(f"STDOUT  : {flatpak_check_user.stdout}")
+                        print(f"STDERR  : {flatpak_check_user.stderr}")
+                if user==False:
+                    flatpak_check_system = subprocess.run(
+                        ["flatpak", "list", "--app", "--columns=application"],
+                        capture_output=True,
+                        text=True
+                    )
+                    user=False
+                    if flatpak_check_system.returncode == 0:
+                        apps = flatpak_check_system.stdout.splitlines()
+
+                        for app in apps:
+                            if binary.lower() in app.lower():
+
+                                info_check = subprocess.run(
+                                    ["flatpak", "info", app],
+                                    capture_output=True,
+                                    text=True
+                                )
+
+                                version = None
+
+                                if info_check.returncode == 0:
+                                    if not compact:
+                                        return info_check.stdout                                    
+                                    for line in info_check.stdout.splitlines():
+                                        if line.lstrip().lower(). startswith("version"):
+
+                                            version = line.split(":", 1)[1].strip()
+                                            user=True
+                                            break
+
+                                if version:
+                                    return f"{version}"
+                                else:
+                                    return "not available"
+
                 return "not installed"
 
             #appel à l'alias ou la fonction via un shell dédié
@@ -378,7 +458,46 @@ def app():
                         capture_output=True,
                         text=True
                     )
-                    path_cmd = ["echo", check_type.stdout.strip()]
+                    if check_type.returncode == 0:
+                        path_cmd = ["echo", check_type.stdout.strip()]
+                    if check_type.returncode != 0:
+                        if debug:
+                            print("")
+                            print([shell, "-i", "-c", f"type {base_binary}"])
+                            print(f"CODE    : {check_type.returncode}")
+                            print(f"STDOUT  : {check_type.stdout}")
+                            print(f"STDERR  : {check_type.stderr}") 
+
+                        try:
+                            user=False
+                            flatpak_check_user = subprocess.run(
+                                ["flatpak", "--user", "list", "--app", "--columns=application"],
+                                capture_output=True,
+                                text=True
+                            )
+
+                            if flatpak_check_user.returncode == 0:
+                                apps = flatpak_check_user.stdout.splitlines()
+                                for app in apps:
+                                    if base_binary.lower() in app.lower():
+                                        user=True
+                                        path_cmd = ["echo", f"flatpak --user run {app}"]
+                            if not user:
+                                flatpak_check_system = subprocess.run(
+                                    ["flatpak", "list", "--app", "--columns=application"],
+                                    capture_output=True,
+                                    text=True
+                                )
+
+                                if flatpak_check_system.returncode == 0:
+                                    apps = flatpak_check_system.stdout.splitlines()
+                                    for app in apps:
+                                        if base_binary.lower() in app.lower():
+                                            user=True
+                                            path_cmd = ["echo", f"flatpak run {app}"]                                
+                        except FileNotFoundError:
+                            if debug:
+                                print("Flatpak not installed")  
 
             #calcul version
             if not compute_args().compact:
@@ -389,7 +508,6 @@ def app():
             if version != "not installed":
                 output = run_command(path_cmd).splitlines()
                 path_output = output[0] if output else ""
-                
             else:
                 path_output = "NA"
 
