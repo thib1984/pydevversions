@@ -51,7 +51,7 @@ def secure_boot_status():
         elif "disabled" in output.lower():
             return "not activated"
         else:
-            return "not available"
+            return "not available (error running mokutil)"
     except FileNotFoundError:
         return "not available (mokutil is not installed)"
     except Exception:
