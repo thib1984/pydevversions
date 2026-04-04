@@ -40,11 +40,6 @@ commands:
   - name: chromium
     categories: ["browser", "network"]
 
-  - name: chromium-flatpak
-    version_cmd: ["flatpak", "run", "org.chromium.Chromium", "--version"]
-    path_cmd: ["whereis", "flatpak"]  
-    categories: ["browser", "network"]
-
   - name: code
     categories: ["development", "ide"]
 

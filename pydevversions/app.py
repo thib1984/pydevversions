@@ -159,8 +159,6 @@ def run_command(cmd):
                             version = None
 
                             if info_check.returncode == 0:
-                                if not compact:
-                                    return info_check.stdout
                                 for line in info_check.stdout.splitlines():
                                     if line.lstrip().lower(). startswith("version"):
 
@@ -202,8 +200,6 @@ def run_command(cmd):
                                 version = None
 
                                 if info_check.returncode == 0:
-                                    if not compact:
-                                        return info_check.stdout                                    
                                     for line in info_check.stdout.splitlines():
                                         if line.lstrip().lower(). startswith("version"):
 
