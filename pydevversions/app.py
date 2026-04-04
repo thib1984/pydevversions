@@ -39,9 +39,9 @@ def get_gpu_info_linux():
                 gpus.append(name)
         return ", ".join(gpus) if gpus else ["No GPU detected"]
     except FileNotFoundError:
-        return ["not available (lspci not installed)"]
+        return "not available (lspci not installed)"
     except subprocess.CalledProcessError:
-        return ["not available (error running lspci)"]
+        return "not available (error running lspci)"
     
 def secure_boot_status():
     try:

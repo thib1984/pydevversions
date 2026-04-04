@@ -1,4 +1,15 @@
 commands:
+
+
+  - name: apk
+    categories: ["package-manager"]
+
+  - name: apt
+    categories: ["package-manager"]
+
+  - name: apt-get
+    categories: ["package-manager"]
+
   - name: bash
     categories: ["shell", "scripting", "devops"]
 
@@ -43,6 +54,9 @@ commands:
   - name: dig
     version_cmd: ["dig", "-v"]
     categories: ["network"]
+
+  - name: dnf
+    categories: ["package-manager"]
 
   - name: docker
     categories: ["devops", "containers"]
@@ -187,6 +201,9 @@ commands:
   - name: nvm
     categories: ["version-manager", "js", "development"]
 
+  - name: pacman
+    categories: ["package-manager"]
+
   - name: pip
     categories: ["package-manager", "python", "development"]
 
@@ -247,6 +264,15 @@ commands:
 
   - name: yarn
     categories: ["package-manager", "javascript", "development"]
+
+  - name: yay
+    categories: ["package-manager"]
+
+  - name: yum
+    categories: ["package-manager"]
+
+  - name: zypper
+    categories: ["package-manager"]
 
   - name: zsh
     categories: ["shell", "system", "scripting"]
