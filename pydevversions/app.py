@@ -174,13 +174,12 @@ def run_command(cmd):
 
                 else:
                     if debug:
-                        print("Flatpak list failed")
                         print(f"CODE    : {flatpak_check_user.returncode}")
                         print(f"STDOUT  : {flatpak_check_user.stdout}")
                         print(f"STDERR  : {flatpak_check_user.stderr}")
                 if user==False:
                     flatpak_check_system = subprocess.run(
-                        ["flatpak", "list", "--app", "--columns=application"],
+                        ["flatpak", "--system", "list", "--app", "--columns=application"],
                         capture_output=True,
                         text=True
                     )
@@ -192,7 +191,7 @@ def run_command(cmd):
                             if binary.lower() in app.lower():
 
                                 info_check = subprocess.run(
-                                    ["flatpak", "info", app],
+                                    ["flatpak", "--system", "info", app],
                                     capture_output=True,
                                     text=True
                                 )
@@ -480,7 +479,7 @@ def app():
                                         path_cmd = ["echo", f"flatpak --user run {app}"]
                             if not user:
                                 flatpak_check_system = subprocess.run(
-                                    ["flatpak", "list", "--app", "--columns=application"],
+                                    ["flatpak", "--system", "list", "--app", "--columns=application"],
                                     capture_output=True,
                                     text=True
                                 )
@@ -490,7 +489,7 @@ def app():
                                     for app in apps:
                                         if base_binary.lower() in app.lower():
                                             user=True
-                                            path_cmd = ["echo", f"flatpak run {app}"]                                
+                                            path_cmd = ["echo", f"flatpak --system run {app}"]                                
                         except FileNotFoundError:
                             if debug:
                                 print("Flatpak not installed")  
