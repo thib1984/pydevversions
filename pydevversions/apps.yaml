@@ -216,7 +216,7 @@ commands:
   - name: rustfmt
     categories: ["language", "runtime"]
 
-  - name: flatpak
+  - name: snap
     categories: ["package-manager"]
     
   - name: ssh
