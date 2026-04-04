@@ -43,22 +43,24 @@ def secure_boot_status():
         return "not available (mokutil is not installed)"
     except Exception:
         return "not available"
-def get_root_device():
-    try:
-        output = subprocess.check_output(["findmnt", "-n", "-o", "SOURCE", "/"]).decode().strip()
-        return output
-    except Exception:
-        return None
 def disk_encryption_status():
-    dev = get_root_device()
-    if not dev:
-        return "not available"
     try:
-        # lsblk attend juste le périphérique bloc, pas un mapper ou partition spéciale
-        output = subprocess.check_output(["lsblk", "-no", "FSTYPE", dev]).decode().strip()
-        return "crypted" if output in ("crypt", "LUKS") else "not crypted"
-    except Exception:
-        return "not available"
+        result = subprocess.run(
+            ["lsblk", "-f"],
+            capture_output=True,
+            text=True,
+            check=True
+        )
+        output = result.stdout.lower()
+        # Vérifie si "crypto" apparaît dans la sortie
+        if "crypto" in output:
+            return "encrypted"
+        else:
+            return "not encrypted"
+    except FileNotFoundError:
+        return "lsblk not installed"
+    except subprocess.CalledProcessError:
+        return "error running lsblk"
     
 BASE_DIR = Path(__file__).resolve().parent
 yaml_path = BASE_DIR / "apps.yaml"
