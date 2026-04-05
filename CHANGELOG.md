@@ -8,7 +8,7 @@
 - [x] use which instead of whereis
 - [x] test category and app exists
 - [x] fix description
-- [ ] search in flatpak for fallback
+- [x] search in flatpak for fallback
 - [x] mot complet uniquement pour -f
 - [x] multi categorie possible
 - [x] add cpu/ram/dd etc dans info

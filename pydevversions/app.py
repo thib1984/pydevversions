@@ -24,6 +24,7 @@ import psutil
 import platform
 import distro 
 import shlex
+import time
 
 
 #initialisation
@@ -38,8 +39,10 @@ debug=compute_args().debug
 noinfo=compute_args().noinfo
 noprogress=compute_args().noprogress
 noprograms=compute_args().noprograms
+noflatpak=compute_args().noflatpak
 filters = getattr(compute_args(), "filter", None)
 categories = getattr(compute_args(), "categories", None)
+
 json_obj = {}
 if not noinfo:
     json_obj["info"] = {}
@@ -117,8 +120,8 @@ source_cmds = " && ".join(
     f"[ -f {os.path.expanduser(f)} ] && {source_cmd} {os.path.expanduser(f)}"
     for f in rc_files
 )
-cmd = f"{source_cmds} && env"
-result = subprocess.run([shell, "-c", cmd], capture_output=True, text=True)
+cmd_src = f"{source_cmds} && env"
+result = subprocess.run([shell, "-c", cmd_src], capture_output=True, text=True)
 env = dict(
     line.split("=", 1)
     for line in result.stdout.splitlines()
@@ -280,10 +283,11 @@ def run_command_version(cmd):
                 env=env
             )
             if result.returncode == 0:
-                return (result.stdout.strip() or result.stderr.strip())    
+                return (result.stdout.strip() or result.stderr.strip()) 
+            return "not installed"   
         #alias fonction
         result = subprocess.run(
-            [shell, "-i", "-c", f"type {binary}"],
+            [shell, "-i", "-c", f"type {shlex.quote(binary)}"],
             capture_output=True,
             text=True,
             env=env
@@ -300,12 +304,13 @@ def run_command_version(cmd):
             return "not installed"                       
         #flatpak                 
         else:
-            version = get_flatpak_version(binary, "--user")
-            if version:
-                return version
-            version = get_flatpak_version(binary, "--system")
-            if version:
-                return version
+            if not noflatpak:
+                version = get_flatpak_version(binary, "--user")
+                if version:
+                    return version
+                version = get_flatpak_version(binary, "--system")
+                if version:
+                    return version
             return "not installed"
     except Exception as e:
         return "not installed"
@@ -314,6 +319,7 @@ def run_command_version(cmd):
 
 def app():
     #info bloc
+    start_time = time.time()  # 🔹 start timer
     if not noinfo:
         labels = {
             "date": "date" if raw else "📅 date",
@@ -354,7 +360,7 @@ def app():
         iterable = tqdm(
             commands_filtered,
             desc="⏳ progress      : ",
-            bar_format="{desc}{percentage:3.0f}% {postfix}"
+            bar_format="{desc}{n}/{total} {postfix}",
         ) if use_tqdm else commands_filtered
         for item in iterable:
             name = item["name"]
@@ -368,7 +374,7 @@ def app():
             ):
                 continue          
             if use_tqdm:
-                iterable.set_postfix_str(base_binary)
+                iterable.set_postfix_str(f"{base_binary}")
             
             #obtain version
             version_cmd = item.get(
@@ -389,18 +395,22 @@ def app():
                     #fonction alias    
                     else:
                         check_type = subprocess.run(
-                            [shell, "-i", "-c", f"type {base_binary}"],
+                            [shell, "-i", "-c", f"type {shlex.quote(base_binary)}"],
                             capture_output=True,
-                            text=True
+                            text=True,
+                            env=env
                         )
                         if check_type.returncode == 0:
                             path_cmd = ["echo", check_type.stdout.strip()]
                         #flatpak    
                         if check_type.returncode != 0:
-                            try:
-                                path_cmd = find_flatpak_command(base_binary)
-                            except FileNotFoundError:
-                                path_cmd = None
+                            if not noflatpak:
+                                try:
+                                    path_cmd = find_flatpak_command(base_binary)
+                                except FileNotFoundError:
+                                    path_cmd = None
+                            else:
+                                path_cmd = None        
                 result = subprocess.run(
                     path_cmd,
                     capture_output=True,
@@ -424,6 +434,7 @@ def app():
                         "path": path_output
                     })
         if not is_json:
+            print(f"⏳ exec. time    : {time.time() - start_time:.1f}s")
             console.print(table)
     
     #json bloc

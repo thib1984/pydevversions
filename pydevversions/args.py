@@ -149,6 +149,11 @@ Written by thib1984.
         type=str,
         metavar="shell",
         help="shell surchargé"
-    )        
+    )
+    my_parser.add_argument(
+        "--noflatpak",
+        action="store_true",
+        help="disable flatpak fallback",
+    )               
     args = my_parser.parse_args()
     return args

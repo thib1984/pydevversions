@@ -119,7 +119,6 @@ commands:
     categories: ["network"]
 
   - name: intellij
-    version_cmd: ["sh", "-c", "intellij --version 2>/dev/null | grep -v warning"]
     categories: ["development", "ide"]
 
   - name: intune-portal
