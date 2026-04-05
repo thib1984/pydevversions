@@ -56,7 +56,7 @@ commands:
   - name: docker
     categories: ["devops", "containers"]
     
-  - name: docker compose
+  - name: docker-compose
     version_cmd: ["docker", "compose", "version"]
     path_cmd: ["which", "docker"]
     categories: ["devops", "containers"]

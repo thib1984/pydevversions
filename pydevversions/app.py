@@ -23,6 +23,7 @@ import getpass
 import psutil
 import platform
 import distro 
+import shlex
 
 
 #initialisation
@@ -154,6 +155,24 @@ def get_flatpak_version(binary, scope):
 
     return None
 
+
+def find_flatpak_command(base_binary):
+    for scope in ("--user", "--system"):
+        result = subprocess.run(
+            ["flatpak", scope, "list", "--app", "--columns=application"],
+            capture_output=True,
+            text=True
+        )
+
+        if result.returncode != 0:
+            continue
+
+        for app in result.stdout.splitlines():
+            if base_binary.lower() in app.lower():
+                return ["echo", f"flatpak {scope} run {app}"]
+
+    return None
+
 def gpu_infos():
     result = subprocess.run(
         ["lspci"],
@@ -271,13 +290,14 @@ def run_command_version(cmd):
             ) 
         if result.returncode == 0:
             result = subprocess.run(
-                [shell, "-i", "-c"] + cmd,
+               [shell, "-i", "-c", shlex.join(cmd)],
                 capture_output=True,
                 text=True,
                 env=env
             )
             if result.returncode == 0:
-                return (result.stdout.strip() or result.stderr.strip())                         
+                return (result.stdout.strip() or result.stderr.strip())  
+            return "not installed"                       
         #flatpak                 
         else:
             version = get_flatpak_version(binary, "--user")
@@ -359,65 +379,40 @@ def app():
             if compute_args().compact:
                 version = "\n".join(version.splitlines()[:5])          
 
-            #obtain path
-            path_cmd = item.get("path_cmd")
-            if path_cmd is None:
-                #gestion binaire/alias
-                if shutil.which(base_binary):
-                    path_cmd = ["which", base_binary]
-                else:
-                    check_type = subprocess.run(
-                        [shell, "-i", "-c", f"type {base_binary}"],
-                        capture_output=True,
-                        text=True
-                    )
-                    if check_type.returncode == 0:
-                        path_cmd = ["echo", check_type.stdout.strip()]
-                    if check_type.returncode != 0:
-                        if debug:
-                            print("")
-                            print([shell, "-i", "-c", f"type {base_binary}"])
-                            print(f"CODE    : {check_type.returncode}")
-                            print(f"STDOUT  : {check_type.stdout}")
-                            print(f"STDERR  : {check_type.stderr}") 
-
-                        try:
-                            user=False
-                            flatpak_check_user = subprocess.run(
-                                ["flatpak", "--user", "list", "--app", "--columns=application"],
-                                capture_output=True,
-                                text=True
-                            )
-
-                            if flatpak_check_user.returncode == 0:
-                                apps = flatpak_check_user.stdout.splitlines()
-                                for app in apps:
-                                    if base_binary.lower() in app.lower():
-                                        user=True
-                                        path_cmd = ["echo", f"flatpak --user run {app}"]
-                            if not user:
-                                flatpak_check_system = subprocess.run(
-                                    ["flatpak", "--system", "list", "--app", "--columns=application"],
-                                    capture_output=True,
-                                    text=True
-                                )
-
-                                if flatpak_check_system.returncode == 0:
-                                    apps = flatpak_check_system.stdout.splitlines()
-                                    for app in apps:
-                                        if base_binary.lower() in app.lower():
-                                            user=True
-                                            path_cmd = ["echo", f"flatpak --system run {app}"]                                
-                        except FileNotFoundError:
-                            if debug:
-                                print("Flatpak not installed")  
-
-            
             if version != "not installed":
-                output = run_command_version(path_cmd).splitlines()
+                #obtain path
+                path_cmd = item.get("path_cmd")
+                if path_cmd is None:
+                    #binaire
+                    if shutil.which(base_binary):
+                        path_cmd = ["which", base_binary]
+                    #fonction alias    
+                    else:
+                        check_type = subprocess.run(
+                            [shell, "-i", "-c", f"type {base_binary}"],
+                            capture_output=True,
+                            text=True
+                        )
+                        if check_type.returncode == 0:
+                            path_cmd = ["echo", check_type.stdout.strip()]
+                        #flatpak    
+                        if check_type.returncode != 0:
+                            try:
+                                path_cmd = find_flatpak_command(base_binary)
+                            except FileNotFoundError:
+                                path_cmd = None
+                result = subprocess.run(
+                    path_cmd,
+                    capture_output=True,
+                    text=True,
+                    env=env
+                )                                
+                output = result.stdout.strip().splitlines()
                 path_output = output[0] if output else ""
+
             else:
                 path_output = "NA"
+            
 
             if version != "not installed" or args.full or getattr(compute_args(), "filter", None):  
                 if not is_json:                    
