@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name="pydevversions",
-    version="2.1.0",
+    version="3.0.0",
     description="Displays versions and paths of a collection of apps in the terminal",
     long_description="The complete description/installation/use/FAQ is available at : https://github.com/thib1984/pydevversions#readme",
     url="https://github.com/thib1984/pydevversions",

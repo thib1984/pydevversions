@@ -1,6 +1,9 @@
 commands:
 
 
+  - name: anisble
+    categories: ["devops"]
+
   - name: apk
     categories: ["package-manager"]
 
@@ -8,6 +11,9 @@ commands:
     categories: ["package-manager"]
 
   - name: apt-get
+    categories: ["package-manager"]
+
+  - name: asdf
     categories: ["package-manager"]
 
   - name: bash
@@ -74,6 +80,9 @@ commands:
 
   - name: fly
     categories: ["devops"]
+
+  - name: geckodriver
+    categories: ["testing", "automation"]
 
   - name: gcc
     categories: ["build"] 
@@ -168,7 +177,14 @@ commands:
   - name: microsoft-edge
     categories: ["browser", "network"]
 
+  - name: minikube
+    version_cmd: ["minikube", "version"]
+    categories: ["devops", "kubernetes"]
+
   - name: mongo
+    categories: ["database"]
+
+  - name: mysql
     categories: ["database"]
 
   - name: mvn
@@ -205,6 +221,12 @@ commands:
   - name: pipx
     categories: ["package-manager", "python", "cli"]
 
+  - name: playwright
+    categories: ["testing", "automation"]
+
+  - name: psql
+    categories: ["database"]
+
   - name: pulsesecure
     version_cmd: ["dpkg-query", "-W", "-f=${Version}\n", "pulsesecure"]
     path_cmd: ["echo", "/opt/pulsesecure/bin/pulsesecure"]
@@ -218,6 +240,10 @@ commands:
 
   - name: secretops
     categories: ["security", "devops"]
+
+  - name: sdk
+    version_cmd: ["sdk", "version"]
+    categories: ["package-manager"]
 
   - name: rustc
     categories: ["language", "runtime"]
@@ -238,7 +264,7 @@ commands:
   - name: telnet
     categories: ["network"]
 
-  - name: torbrowser-launcher
+  - name: torbrowser
     categories: ["browser"]
     
   - name: trivy

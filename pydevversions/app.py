@@ -147,37 +147,8 @@ else:
     )
     functions = set(func_proc.stdout.split())
 
-def get_flatpak_version(binary, scope):
-    result = subprocess.run(
-        ["flatpak", scope, "list", "--app", "--columns=application"],
-        capture_output=True,
-        text=True
-    )
-
-    if result.returncode != 0:
-        return None
-
-    for app in result.stdout.splitlines():
-        if binary.lower() in app.lower():
-            info = subprocess.run(
-                ["flatpak", scope, "info", app],
-                capture_output=True,
-                text=True
-            )
-
-            if info.returncode != 0:
-                continue
-
-            for line in info.stdout.splitlines():
-                if line.strip().lower().startswith("version"):
-                    return line.split(":", 1)[1].strip()
-
-            return "not available"
-
-    return None
-
-
-def find_flatpak_command(base_binary):
+def get_flatpak_version(binary):
+    binary = binary.lower()
     for scope in ("--user", "--system"):
         result = subprocess.run(
             ["flatpak", scope, "list", "--app", "--columns=application"],
@@ -189,10 +160,47 @@ def find_flatpak_command(base_binary):
             continue
 
         for app in result.stdout.splitlines():
-            if base_binary.lower() in app.lower():
+            app_lower = app.lower()
+            words = re.split(r"[._-]", app_lower)
+            if binary in words:
+                info = subprocess.run(
+                    ["flatpak", scope, "info", app],
+                    capture_output=True,
+                    text=True
+                )
+
+                if info.returncode != 0:
+                    continue
+
+                for line in info.stdout.splitlines():
+                    if line.strip().lower().startswith("version"):
+                        return line.split(":", 1)[1].strip()
+
+                return "not available"
+
+    return None
+
+
+def find_flatpak_command(base_binary):
+    base_binary = base_binary.lower()
+
+    for scope in ("--user", "--system"):
+        result = subprocess.run(
+            ["flatpak", scope, "list", "--app", "--columns=application"],
+            capture_output=True,
+            text=True
+        )
+
+        if result.returncode != 0:
+            continue
+        for app in result.stdout.splitlines():
+            app_lower = app.lower()
+            words = re.split(r"[._-]", app_lower)
+            if base_binary in words:
                 return ["echo", f"flatpak {scope} run {app}"]
 
     return None
+
 
 def gpu_infos():
     result = subprocess.run(
@@ -317,10 +325,7 @@ def run_command_version(cmd):
         #flatpak                 
         else:
             if not noflatpak:
-                version = get_flatpak_version(binary, "--user")
-                if version:
-                    return version
-                version = get_flatpak_version(binary, "--system")
+                version = get_flatpak_version(binary)
                 if version:
                     return version
             return "not installed"
