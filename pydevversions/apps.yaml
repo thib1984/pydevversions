@@ -152,7 +152,7 @@ commands:
     version_cmd: ["k9s", "version", "-s"]
     categories: ["devops", "kubernetes"]
 
-  - name: LibreWolf
+  - name: librewolf
     categories: ["browser", "network"]
 
   - name: lift
