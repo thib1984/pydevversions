@@ -28,10 +28,6 @@ import time
 
 
 #initialisation
-start_time = time.time()  # 🔹 start timer
-BASE_DIR = Path(__file__).resolve().parent
-yaml_path = BASE_DIR / "apps.yaml"
-word_with_version_regex = re.compile(r'\S*\d\S*')
 args = compute_args()
 raw=compute_args().raw
 is_json=compute_args().json
@@ -44,6 +40,15 @@ noflatpak=compute_args().noflatpak
 noalias=compute_args().noalias
 filters = getattr(compute_args(), "filter", None)
 categories = getattr(compute_args(), "categories", None)
+if not is_json:
+    message="pydevversions is running..."
+    if not raw:
+            message = "⏳  " + message
+    print(message)
+start_time = time.time()  # 🔹 start timer
+BASE_DIR = Path(__file__).resolve().parent
+yaml_path = BASE_DIR / "apps.yaml"
+word_with_version_regex = re.compile(r'\S*\d\S*')
 
 json_obj = {}
 if not noinfo:

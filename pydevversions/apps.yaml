@@ -1,5 +1,7 @@
 commands:
 
+  - name: android-studio
+    categories: ["development", "ide"]
 
   - name: anisble
     categories: ["devops"]
