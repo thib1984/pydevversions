@@ -12,5 +12,4 @@
 - [x] mot complet uniquement pour -f
 - [x] multi categorie possible
 - [x] add cpu/ram/dd etc dans info
-- [ ] add apps_custom.yaml
 

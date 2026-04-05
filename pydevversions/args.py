@@ -154,6 +154,11 @@ Written by thib1984.
         "--noflatpak",
         action="store_true",
         help="disable flatpak fallback",
-    )               
+    ) 
+    my_parser.add_argument(
+        "--noalias",
+        action="store_true",
+        help="disable alias/function fallback",
+    )                     
     args = my_parser.parse_args()
     return args

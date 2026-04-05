@@ -159,11 +159,6 @@ commands:
     version_cmd: ["lift", "version"]
     categories: ["system"]
 
-  - name: linux
-    version_cmd: ["cat", "/etc/os-release"]
-    path_cmd: ["echo", "/etc/os-release"]
-    categories: ["system"]
-
   - name: make
     categories: ["build", "development"]
 

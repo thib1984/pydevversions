@@ -28,6 +28,7 @@ import time
 
 
 #initialisation
+start_time = time.time()  # 🔹 start timer
 BASE_DIR = Path(__file__).resolve().parent
 yaml_path = BASE_DIR / "apps.yaml"
 word_with_version_regex = re.compile(r'\S*\d\S*')
@@ -40,6 +41,7 @@ noinfo=compute_args().noinfo
 noprogress=compute_args().noprogress
 noprograms=compute_args().noprograms
 noflatpak=compute_args().noflatpak
+noalias=compute_args().noalias
 filters = getattr(compute_args(), "filter", None)
 categories = getattr(compute_args(), "categories", None)
 
@@ -127,7 +129,23 @@ env = dict(
     for line in result.stdout.splitlines()
     if "=" in line
 )
+if noalias:
+    aliases=[]
+    functions=[]
+else:       
+    alias_proc = subprocess.run(
+        [shell, "-i", "-c", "alias -L | awk -F'[ =]' '{print $2}'"],
+        capture_output=True,
+        text=True
+    )
+    aliases = set(alias_proc.stdout.split())
 
+    func_proc = subprocess.run(
+        [shell, "-i", "-c", "compgen -A function"],
+        capture_output=True,
+        text=True
+    )
+    functions = set(func_proc.stdout.split())
 
 def get_flatpak_version(binary, scope):
     result = subprocess.run(
@@ -286,13 +304,7 @@ def run_command_version(cmd):
                 return (result.stdout.strip() or result.stderr.strip()) 
             return "not installed"   
         #alias fonction
-        result = subprocess.run(
-            [shell, "-i", "-c", f"type {shlex.quote(binary)}"],
-            capture_output=True,
-            text=True,
-            env=env
-            ) 
-        if result.returncode == 0:
+        if binary in aliases or binary in functions:
             result = subprocess.run(
                [shell, "-i", "-c", shlex.join(cmd)],
                 capture_output=True,
@@ -319,7 +331,7 @@ def run_command_version(cmd):
 
 def app():
     #info bloc
-    start_time = time.time()  # 🔹 start timer
+    
     if not noinfo:
         labels = {
             "date": "date" if raw else "📅 date",
@@ -394,16 +406,18 @@ def app():
                         path_cmd = ["which", base_binary]
                     #fonction alias    
                     else:
-                        check_type = subprocess.run(
-                            [shell, "-i", "-c", f"type {shlex.quote(base_binary)}"],
-                            capture_output=True,
-                            text=True,
-                            env=env
-                        )
-                        if check_type.returncode == 0:
-                            path_cmd = ["echo", check_type.stdout.strip()]
+                        if base_binary in aliases or base_binary in functions:
+                            check_type = subprocess.run(
+                                [shell, "-i", "-c", f"type {shlex.quote(base_binary)}"],
+                                capture_output=True,
+                                text=True,
+                                env=env
+                            )
+                            if check_type.returncode == 0:
+                                path_cmd = ["echo", check_type.stdout.strip()]
+
                         #flatpak    
-                        if check_type.returncode != 0:
+                        else:
                             if not noflatpak:
                                 try:
                                     path_cmd = find_flatpak_command(base_binary)
