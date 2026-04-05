@@ -24,64 +24,184 @@ import psutil
 import platform
 import distro 
 
-def get_gpu_info_linux():
-    try:
-        result = subprocess.run(
-            ["lspci"],
-            capture_output=True,
-            text=True,
-            check=True
-        )
-        gpus = []
-        for line in result.stdout.splitlines():
-            if "VGA compatible controller" in line or "3D controller" in line:
-                name = line.split(":")[-1].strip()
-                gpus.append(name)
-        return ", ".join(gpus) if gpus else ["No GPU detected"]
-    except FileNotFoundError:
-        return "not available (lspci not installed)"
-    except subprocess.CalledProcessError:
-        return "not available (error running lspci)"
-    
-def secure_boot_status():
-    try:
-        output = subprocess.check_output(["mokutil", "--sb-state"], text=True, stderr=subprocess.DEVNULL)
-        if "enabled" in output.lower():
-            return "activated"
-        elif "disabled" in output.lower():
-            return "not activated"
-        else:
-            return "not available (error running mokutil)"
-    except FileNotFoundError:
-        return "not available (mokutil is not installed)"
-    except Exception:
-        return "not available (error running mokutil)"
-    
-def disk_encryption_status():
-    try:
-        result = subprocess.run(
-            ["lsblk", "-f"],
-            capture_output=True,
-            text=True,
-            check=True
-        )
-        output = result.stdout.lower()
-        if "crypto" in output:
-            return "encrypted"
-        else:
-            return "not encrypted"
-    except FileNotFoundError:
-        return "not available (lsblk not installed)"
-    except subprocess.CalledProcessError:
-        return "not available (error running lsblk)"
 
-def rework_version(cell):
+#initialisation
+BASE_DIR = Path(__file__).resolve().parent
+yaml_path = BASE_DIR / "apps.yaml"
+word_with_version_regex = re.compile(r'\S*\d\S*')
+args = compute_args()
+raw=compute_args().raw
+is_json=compute_args().json
+compact=compute_args().compact
+debug=compute_args().debug
+noinfo=compute_args().noinfo
+noprogress=compute_args().noprogress
+noprograms=compute_args().noprograms
+filters = getattr(compute_args(), "filter", None)
+categories = getattr(compute_args(), "categories", None)
+json_obj = {}
+if not noinfo:
+    json_obj["info"] = {}
+if not noprograms:
+    json_obj["programs"] = []
+console = Console()
+header_style = "bold yellow" if not raw else None
+if not is_json:
+    table = Table(show_header=True, header_style=header_style, show_lines=True)
+    table.add_column("Binary")
+    table.add_column("Version")
+    table.add_column("Path")
+    
+use_tqdm = not (raw or is_json or debug or noprogress or noprograms)
+
+#filter apps
+with open(yaml_path, "r") as f:
+    config = yaml.safe_load(f)
+apps = config.get("commands", [])
+command_names = [cmd["name"] for cmd in apps]
+all_categories = set()
+for cmd in apps:
+    cats = cmd.get("categories", [])
+    all_categories.update(cats)
+if categories is not None:
+    invalid = [cat for cat in categories if cat not in all_categories]
+    if invalid:
+        message = (
+            "Error: non-existent category: "
+            + ", ".join(invalid)
+            + ". Available category are "
+            + ", ".join(sorted(all_categories))
+        )
+        if not raw:
+            message = "⚠️  " + message
+        sys.exit(message)
+if categories is not None:
+    filtered_apps = [
+        cmd for cmd in apps
+        if any(cat in cmd.get("categories", []) for cat in categories)]
+else:
+    filtered_apps = apps
+filtered_command_names = [cmd["name"] for cmd in filtered_apps]
+if filters is not None:
+    invalid = [f for f in filters if f not in filtered_command_names]
+    if invalid:
+        message = (
+            "Error: non-existent application(s): "
+            + ", ".join(invalid)
+            + ". Available applications: "
+            + ", ".join(filtered_command_names)
+        )
+        if not raw:
+            message = "⚠️  " + message
+        sys.exit(message)
+commands_filtered = [cmd for cmd in filtered_apps if not filters or cmd["name"] in filters]
+
+#prepare shell
+if not compute_args().shell:
+    shell_path = os.environ.get("SHELL", "/bin/bash")
+    shell = os.path.basename(shell_path) 
+else:
+    shell=compute_args().shell  
+if shell == "bash":
+    rc_files = ["~/.bashrc"]
+elif shell == "zsh":
+    rc_files = ["~/.zshrc"]
+else:
+    message = "Erreur : shell not in bash,zsh"
+    if not raw:
+        message = "⚠️  " + message
+    sys.exit(message)
+source_cmd = "source"
+source_cmds = " && ".join(
+    f"[ -f {os.path.expanduser(f)} ] && {source_cmd} {os.path.expanduser(f)}"
+    for f in rc_files
+)
+cmd = f"{source_cmds} && env"
+result = subprocess.run([shell, "-c", cmd], capture_output=True, text=True)
+env = dict(
+    line.split("=", 1)
+    for line in result.stdout.splitlines()
+    if "=" in line
+)
+
+
+
+def gpu_infos():
+    result = subprocess.run(
+        ["lspci"],
+        capture_output=True,
+        text=True
+    )
+    if result.returncode != 0:
+        return "not available (error running lspci)"            
+    gpus = []
+    for line in result.stdout.splitlines():
+        if "VGA compatible controller" in line:
+            name = line.split(":")[-1].strip()
+            gpus.append(name)
+    return ", ".join(gpus) if gpus else ["no GPU detected"]
+
+def secure_boot_infos():
+    result = subprocess.run(
+        ["mokutil", "--sb-state"],
+        capture_output=True,
+        text=True
+    )
+    if result.returncode != 0:
+        return "not available (error running mokutil)"
+    output = result.stdout.lower()
+    if "enabled" in output:
+        return "activated"
+    elif "disabled" in output:
+        return "not activated"
+    else:
+        return "not available (unexpected output running mokutil)"
+    
+def disk_encryption_infos():
+    result = subprocess.run(
+        ["lsblk", "-f"],
+        capture_output=True,
+        text=True,
+    )
+    if result.returncode != 0:
+        return "not available (error running lsblk)"    
+    output = result.stdout.lower()
+    if "crypto" in output:
+        return "encrypted"
+    else:
+        return "not encrypted"
+
+def cpu_infos():
+    try:
+        with open("/proc/cpuinfo") as f:
+            for line in f:
+                if "model name" in line:
+                    return line.strip().split(":")[1]
+    except:
+        return "not available (error opening /proc/cpuinfo)"
+
+def display_server_infos():
+    if os.environ.get("WAYLAND_DISPLAY"):
+        return "Wayland"
+    elif os.environ.get("DISPLAY"):
+        return "X11"
+    else:
+        return "not available"
+
+def format_bytes(size):
+    if size is None:
+        return "unknown"
+    for unit in ['B', 'KB', 'MB', 'GB', 'TB']:
+        if size < 1024:
+            return f"{size:.2f} {unit}"
+        size /= 1024
+
+def stylize_version(cell):
     if compact:
         matches = list(re.finditer(word_with_version_regex, cell))
-        new_cell = " ".join(match.group(0) for match in matches)
-
-        if new_cell.strip():  # non vide après suppression des espaces
-            cell = new_cell
+        reduced_cell = " ".join(match.group(0) for match in matches)
+        if reduced_cell.strip():
+            cell = reduced_cell
     if raw or is_json:
         return cell
     text = Text(cell)
@@ -92,7 +212,7 @@ def rework_version(cell):
         text.stylize("yellow bold", match.start(), match.end())
     return text
 
-def color_path(cell):
+def stylize_path(cell):
     if raw or is_json:
         return cell    
     text = Text(cell)
@@ -237,125 +357,11 @@ def run_command(cmd):
             print(e)
         return "not installed"
 
-def get_cpu_name():
-    try:
-        with open("/proc/cpuinfo") as f:
-            for line in f:
-                if "model name" in line:
-                    return line.strip().split(":")[1]
-    except:
-        return "unknown"
-
-def format_bytes(size):
-    if size is None:
-        return "unknown"
-    for unit in ['B', 'KB', 'MB', 'GB', 'TB']:
-        if size < 1024:
-            return f"{size:.2f} {unit}"
-        size /= 1024
-
-def display_server():
-    if os.environ.get("WAYLAND_DISPLAY"):
-        return "Wayland"
-    elif os.environ.get("DISPLAY"):
-        return "X11"
-    else:
-        return "unknown"
-    
-BASE_DIR = Path(__file__).resolve().parent
-yaml_path = BASE_DIR / "apps.yaml"
-word_with_version_regex = re.compile(r'\S*\d\S*')
-
-args = compute_args()
-raw=compute_args().raw
-is_json=compute_args().json
-compact=compute_args().compact
-debug=compute_args().debug
-noinfo=compute_args().noinfo
-noprogress=compute_args().noprogress
-noprograms=compute_args().noprograms
-filters = getattr(compute_args(), "filter", None)
-categories = getattr(compute_args(), "categories", None)
-
-json_obj = {}
-if not noinfo:
-    json_obj["info"] = {}
-if not noprograms:
-    json_obj["programs"] = []
-
-with open(yaml_path, "r") as f:
-    config = yaml.safe_load(f)
-apps = config.get("commands", [])
-command_names = [cmd["name"] for cmd in apps]
-all_categories = set()
-for cmd in apps:
-    cats = cmd.get("categories", [])
-    all_categories.update(cats)
-if categories is not None:
-    invalid = [cat for cat in categories if cat not in all_categories]
-    if invalid:
-        message = (
-            "Error: non-existent category: "
-            + ", ".join(invalid)
-            + ". Available category are "
-            + ", ".join(sorted(all_categories))
-        )
-        if not raw:
-            message = "⚠️  " + message
-        sys.exit(message)
-if categories is not None:
-    filtered_apps = [
-        cmd for cmd in apps
-        if any(cat in cmd.get("categories", []) for cat in categories)]
-else:
-    filtered_apps = apps
-filtered_command_names = [cmd["name"] for cmd in filtered_apps]
-if filters is not None:
-    invalid = [f for f in filters if f not in filtered_command_names]
-    if invalid:
-        message = (
-            "Error: non-existent application(s): "
-            + ", ".join(invalid)
-            + ". Available applications: "
-            + ", ".join(filtered_command_names)
-        )
-        if not raw:
-            message = "⚠️  " + message
-        sys.exit(message)
-commands_filtered = [cmd for cmd in filtered_apps if not filters or cmd["name"] in filters]
-
-
-if not compute_args().shell:
-    shell_path = os.environ.get("SHELL", "/bin/bash")
-    shell = os.path.basename(shell_path) 
-else:
-    shell=compute_args().shell  
-if shell == "bash":
-    rc_files = ["~/.bashrc"]
-elif shell == "zsh":
-    rc_files = ["~/.zshrc"]
-else:
-    message = "Erreur : shell not in bash,zsh"
-    if not raw:
-        message = "⚠️  " + message
-    sys.exit(message)
-source_cmd = "source"
-source_cmds = " && ".join(
-    f"[ -f {os.path.expanduser(f)} ] && {source_cmd} {os.path.expanduser(f)}"
-    for f in rc_files
-)
-cmd = f"{source_cmds} && env"
-result = subprocess.run([shell, "-c", cmd], capture_output=True, text=True)
-env = dict(
-    line.split("=", 1)
-    for line in result.stdout.splitlines()
-    if "=" in line
-)
 
 
 def app():
+    #info bloc
     if not noinfo:
-        # Labels
         labels = {
             "date": "date" if raw else "📅 date",
             "user": "user" if raw else "👤 user",
@@ -370,57 +376,33 @@ def app():
             "diskcrypto": "Disk Crypto" if raw else "🔐 Disk Crypto",
             "display": "Display" if raw else "💻 Display",            
         }
-
-        cpu_name = get_cpu_name()
-        cpu_cores = os.cpu_count()
-        freq = psutil.cpu_freq() 
-
-        if psutil:
-            ram_total = psutil.virtual_memory().total
-            disk_total = psutil.disk_usage('/').total
-        else:
-            ram_total = disk_total = None
-
-        os_info = f"{distro.name()} {distro.version()} ({platform.release()})"
-
         info = {
             "date": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             "user": getpass.getuser(),
             "home": os.path.expanduser("~"),
             "shell": shell,
-            "cpu": f"{cpu_name} ({cpu_cores} cores {freq.max/1000:.2f} GHz)",
-            "ram": format_bytes(ram_total),
-            "disk": format_bytes(disk_total),
-            "video": get_gpu_info_linux(),
-            "os": os_info,
-            "secureboot": secure_boot_status(),
-            "diskcrypto": disk_encryption_status(),  
-            "display": display_server(),           
+            "cpu": f"{cpu_infos()} ({os.cpu_count()} cores {psutil.cpu_freq() .max/1000:.2f} GHz)",
+            "ram": format_bytes(psutil.virtual_memory().total),
+            "disk": format_bytes(psutil.disk_usage('/').total),
+            "video": gpu_infos(),
+            "os": f"{distro.name()} {distro.version()} ({platform.release()})",
+            "secureboot": secure_boot_infos(),
+            "diskcrypto": disk_encryption_infos(),  
+            "display": display_server_infos(),           
         }
         for key in ["date", "user", "home", "shell", "cpu", "ram", "disk", "video", "os", "secureboot", "diskcrypto", "display"]:
             if not is_json:
                 print(f"{labels[key]:<15} : {info[key]}")
             else:
                 json_obj["info"][key] = info[key]
-    console = Console()
-    header_style = "bold yellow" if not raw else None
-
-    if not is_json:
-        table = Table(show_header=True, header_style=header_style, show_lines=True)
-        table.add_column("Binary")
-        table.add_column("Version")
-        table.add_column("Path")
-
-    use_tqdm = not (raw or is_json or debug or noprogress or noprograms)
-
-    iterable = tqdm(
-        commands_filtered,
-        desc="⏳ progress      : ",
-        bar_format="{desc}{percentage:3.0f}% {postfix}"
-    ) if use_tqdm else commands_filtered
-
-
+    
+    #apps bloc
     if not noprograms:
+        iterable = tqdm(
+            commands_filtered,
+            desc="⏳ progress      : ",
+            bar_format="{desc}{percentage:3.0f}% {postfix}"
+        ) if use_tqdm else commands_filtered
         for item in iterable:
             name = item["name"]
             base_binary = name.split()[0]
@@ -508,14 +490,16 @@ def app():
 
             if version != "not installed" or args.full or getattr(compute_args(), "filter", None):  
                 if not is_json:                    
-                    table.add_row(name, rework_version(version), color_path(path_output))
+                    table.add_row(name, stylize_version(version), stylize_path(path_output))
                 else:
                     json_obj["programs"].append({
                         "name": name,
-                        "version": rework_version(version),
+                        "version": stylize_version(version),
                         "path": path_output
                     })
         if not is_json:
             console.print(table)
+    
+    #json bloc
     if is_json:
         print(json.dumps(json_obj, indent=4))
