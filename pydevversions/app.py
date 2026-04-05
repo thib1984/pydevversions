@@ -3,6 +3,7 @@ pydevversions use case
 """
 
 from pydevversions.args import compute_args, get_all_categories
+from importlib.metadata import version, PackageNotFoundError
 
 from tqdm import tqdm
 from rich.console import Console
@@ -40,10 +41,18 @@ noflatpak=compute_args().noflatpak
 noalias=compute_args().noalias
 filters = getattr(compute_args(), "filter", None)
 categories = getattr(compute_args(), "categories", None)
+try:
+    app_version = version("pydevversions")
+except PackageNotFoundError:
+    app_version = "dev"
 if not is_json:
-    message="pydevversions is running..."
+    message = f"pydevversions v{app_version} is running..."
     if not raw:
-            message = "⏳  " + message
+        message = "🚀 " + message
+    print(message)
+    message = f"command       : {' '.join(sys.argv[0:])}"
+    if not raw:
+        message = "🧾 " + message
     print(message)
 start_time = time.time()  # 🔹 start timer
 BASE_DIR = Path(__file__).resolve().parent
