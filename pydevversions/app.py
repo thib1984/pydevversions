@@ -125,6 +125,34 @@ env = dict(
 )
 
 
+def get_flatpak_version(binary, scope):
+    result = subprocess.run(
+        ["flatpak", scope, "list", "--app", "--columns=application"],
+        capture_output=True,
+        text=True
+    )
+
+    if result.returncode != 0:
+        return None
+
+    for app in result.stdout.splitlines():
+        if binary.lower() in app.lower():
+            info = subprocess.run(
+                ["flatpak", scope, "info", app],
+                capture_output=True,
+                text=True
+            )
+
+            if info.returncode != 0:
+                continue
+
+            for line in info.stdout.splitlines():
+                if line.strip().lower().startswith("version"):
+                    return line.split(":", 1)[1].strip()
+
+            return "not available"
+
+    return None
 
 def gpu_infos():
     result = subprocess.run(
@@ -221,7 +249,7 @@ def stylize_path(cell):
         return text
     return cell
 
-def run_command(cmd):
+def run_command_version(cmd):
     try:
         binary = cmd[0]
         # binaire réel
@@ -231,130 +259,35 @@ def run_command(cmd):
                 capture_output=True,
                 text=True,
                 env=env
-            )    
+            )
             if result.returncode == 0:
-                return (result.stdout.strip() or result.stderr.strip())
-            if debug:
-                print("")
-                print(cmd)
-                print(f"CODE    : {result.returncode}")
-                print(f"STDOUT  : {result.stdout}")
-                print(f"STDERR  : {result.stderr}")                   
-        # alias ou fonction    
-        else:
-            check = subprocess.run(
-                [shell, "-i", "-c", f"type {binary}"],
+                return (result.stdout.strip() or result.stderr.strip())    
+        #alias fonction
+        result = subprocess.run(
+            [shell, "-i", "-c", f"type {binary}"],
+            capture_output=True,
+            text=True,
+            env=env
+            ) 
+        if result.returncode == 0:
+            result = subprocess.run(
+                [shell, "-i", "-c"] + cmd,
                 capture_output=True,
                 text=True,
                 env=env
             )
-            # fallback
-            if check.returncode != 0:
-                if debug:
-                    print("")
-                    print([shell, "-i", "-c", f"type {binary}"])
-                    print(f"CODE    : {check.returncode}")
-                    print(f"STDOUT  : {check.stdout}")
-                    print(f"STDERR  : {check.stderr}") 
-
-
-                flatpak_check_user = subprocess.run(
-                    ["flatpak", "--user", "list", "--app", "--columns=application"],
-                    capture_output=True,
-                    text=True
-                )
-                user=False
-                if flatpak_check_user.returncode == 0:
-                    apps = flatpak_check_user.stdout.splitlines()
-
-                    for app in apps:
-                        if binary.lower() in app.lower():
-
-                            info_check = subprocess.run(
-                                ["flatpak", "--user", "info", app],
-                                capture_output=True,
-                                text=True
-                            )
-
-                            version = None
-
-                            if info_check.returncode == 0:
-                                for line in info_check.stdout.splitlines():
-                                    if line.lstrip().lower(). startswith("version"):
-
-                                        version = line.split(":", 1)[1].strip()
-                                        user=True
-                                        break
-
-                            if version:
-                                return f"{version}"
-                            else:
-                                return "not available"
-
-
-                else:
-                    if debug:
-                        print(f"CODE    : {flatpak_check_user.returncode}")
-                        print(f"STDOUT  : {flatpak_check_user.stdout}")
-                        print(f"STDERR  : {flatpak_check_user.stderr}")
-                if user==False:
-                    flatpak_check_system = subprocess.run(
-                        ["flatpak", "--system", "list", "--app", "--columns=application"],
-                        capture_output=True,
-                        text=True
-                    )
-                    user=False
-                    if flatpak_check_system.returncode == 0:
-                        apps = flatpak_check_system.stdout.splitlines()
-
-                        for app in apps:
-                            if binary.lower() in app.lower():
-
-                                info_check = subprocess.run(
-                                    ["flatpak", "--system", "info", app],
-                                    capture_output=True,
-                                    text=True
-                                )
-
-                                version = None
-
-                                if info_check.returncode == 0:
-                                    for line in info_check.stdout.splitlines():
-                                        if line.lstrip().lower(). startswith("version"):
-
-                                            version = line.split(":", 1)[1].strip()
-                                            user=True
-                                            break
-
-                                if version:
-                                    return f"{version}"
-                                else:
-                                    return "not available"
-
-                return "not installed"
-
-            #appel à l'alias ou la fonction via un shell dédié
-            cmd_str = " ".join(cmd)
-            result = subprocess.run(
-                [shell, "-i", "-c", cmd_str],
-                capture_output=True,
-                text=True,
-                env=env
-            )     
             if result.returncode == 0:
-                return (result.stdout.strip() or result.stderr.strip())
-            if debug:
-                print("")
-                print([shell, "-i", "-c", cmd_str])
-                print(f"CODE    : {result.returncode}")
-                print(f"STDOUT  : {result.stdout}")
-                print(f"STDERR  : {result.stderr}")                         
-
-        # fallback
-        return "not installed"
+                return (result.stdout.strip() or result.stderr.strip())                         
+        #flatpak                 
+        else:
+            version = get_flatpak_version(binary, "--user")
+            if version:
+                return version
+            version = get_flatpak_version(binary, "--system")
+            if version:
+                return version
+            return "not installed"
     except Exception as e:
-        if debug:
-            print(e)
         return "not installed"
 
 
@@ -417,13 +350,16 @@ def app():
             if use_tqdm:
                 iterable.set_postfix_str(base_binary)
             
-            #preparation commande pour display version
+            #obtain version
             version_cmd = item.get(
                 "version_cmd",
                 [base_binary, "--version"]
             )
+            version = run_command_version(version_cmd)
+            if compute_args().compact:
+                version = "\n".join(version.splitlines()[:5])          
 
-            #preparation commande pour display path
+            #obtain path
             path_cmd = item.get("path_cmd")
             if path_cmd is None:
                 #gestion binaire/alias
@@ -476,14 +412,9 @@ def app():
                             if debug:
                                 print("Flatpak not installed")  
 
-            #calcul version
-            if not compute_args().compact:
-                version = run_command(version_cmd)
-            else:
-                version_tmp = run_command(version_cmd).splitlines()
-                version = "\n".join(version_tmp[:5])               
+            
             if version != "not installed":
-                output = run_command(path_cmd).splitlines()
+                output = run_command_version(path_cmd).splitlines()
                 path_output = output[0] if output else ""
             else:
                 path_output = "NA"
