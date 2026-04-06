@@ -173,6 +173,11 @@ Written by thib1984.
         "--noparams",
         action="store_true",
         help="disable display params",
-    )                         
+    )   
+    my_parser.add_argument(
+        "--notime",
+        action="store_true",
+        help="disable time spent",
+    )                            
     args = my_parser.parse_args()
     return args

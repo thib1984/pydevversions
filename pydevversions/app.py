@@ -40,6 +40,7 @@ raw=args.raw
 is_json=args.json
 compact=args.compact
 debug=args.debug
+notime=args.notime
 noinfo=args.noinfo
 noprogress=args.noprogress
 noparams=args.noparams
@@ -506,10 +507,11 @@ def app():
                     json_obj["programs"].append(r)
 
         if not is_json:
-            print(f"⏳ exec. time    : {time.time() - start_time:.1f}s")
+            if not notime:
+                print(f"⏳ exec. time    : {time.time() - start_time:.1f}s")
             console.print(table)
     else:
-        if not is_json:
+        if not is_json and not notime:
             print(f"⏳ exec. time    : {time.time() - start_time:.1f}s")        
     #json bloc
     if is_json:
