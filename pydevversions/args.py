@@ -159,6 +159,11 @@ Written by thib1984.
         "--noalias",
         action="store_true",
         help="disable alias/function fallback",
-    )                     
+    )  
+    my_parser.add_argument(
+        "--noparams",
+        action="store_true",
+        help="disable display params",
+    )                         
     args = my_parser.parse_args()
     return args

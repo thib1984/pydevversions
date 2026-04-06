@@ -36,30 +36,36 @@ compact=compute_args().compact
 debug=compute_args().debug
 noinfo=compute_args().noinfo
 noprogress=compute_args().noprogress
+noparams=compute_args().noparams
 noprograms=compute_args().noprograms
 noflatpak=compute_args().noflatpak
 noalias=compute_args().noalias
 filters = getattr(compute_args(), "filter", None)
 categories = getattr(compute_args(), "categories", None)
+json_obj = {}
 try:
     app_version = version("pydevversions")
 except PackageNotFoundError:
     app_version = "dev"
-if not is_json:
-    message = f"pydevversions v{app_version} is running..."
-    if not raw:
-        message = "🚀 " + message
-    print(message)
-    message = f"command       : {' '.join(sys.argv[0:])}"
-    if not raw:
-        message = "🧾 " + message
-    print(message)
+if not noparams:
+    if not is_json:
+        message = f"pydevversions v{app_version} is running..."
+        if not raw:
+            message = "🚀 " + message
+        print(message)
+        message = f"command       : {' '.join(sys.argv[0:])}"
+        if not raw:
+            message = "🧾 " + message
+        print(message)
+    else:      
+        json_obj["params"] = {}
+        json_obj["params"]["version"] = f"pydevversions {app_version}"  
+        json_obj["params"]["command"] = ' '.join(sys.argv[0:])
 start_time = time.time()  # 🔹 start timer
 BASE_DIR = Path(__file__).resolve().parent
 yaml_path = BASE_DIR / "apps.yaml"
 word_with_version_regex = re.compile(r'\S*\d\S*')
 
-json_obj = {}
 if not noinfo:
     json_obj["info"] = {}
 if not noprograms:
@@ -364,7 +370,8 @@ def app():
             "os": "os" if raw else "💻  os",
             "secureboot": "SecureBoot" if raw else "🔐 SecureBoot",
             "diskcrypto": "Disk Crypto" if raw else "🔐 Disk Crypto",
-            "display": "Display" if raw else "💻 Display",            
+            "display": "Display" if raw else "💻 Display",
+            "desktop": "Desktop" if raw else "💻 Desktop",            
         }
         info = {
             "date": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
@@ -378,9 +385,10 @@ def app():
             "os": f"{distro.name()} {distro.version()} ({platform.release()})",
             "secureboot": secure_boot_infos(),
             "diskcrypto": disk_encryption_infos(),  
-            "display": display_server_infos(),           
+            "display": display_server_infos(), 
+            "desktop": os.environ.get("XDG_CURRENT_DESKTOP") or os.environ.get("DESKTOP_SESSION") or os.environ.get("GDMSESSION")        
         }
-        for key in ["date", "user", "home", "shell", "cpu", "ram", "disk", "video", "os", "secureboot", "diskcrypto", "display"]:
+        for key in ["date", "user", "home", "shell", "cpu", "ram", "disk", "video", "os", "secureboot", "diskcrypto", "desktop", "display"]:
             if not is_json:
                 print(f"{labels[key]:<15} : {info[key]}")
             else:

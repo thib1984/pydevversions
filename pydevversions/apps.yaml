@@ -3,7 +3,7 @@ commands:
   - name: android-studio
     categories: ["development", "ide"]
 
-  - name: anisble
+  - name: ansible
     categories: ["devops"]
 
   - name: apk
@@ -48,6 +48,9 @@ commands:
   - name: chromium
     categories: ["browser", "network"]
 
+  - name: cinnamon
+    categories: ["system"]
+
   - name: code
     categories: ["development", "ide"]
 
@@ -74,6 +77,12 @@ commands:
     path_cmd: ["echo", " /opt/ds_agent/ds_agent"]
     categories: ["system", "security"]
 
+  - name: eclipse
+    categories: ["development", "ide"]
+
+  - name: emacs
+    categories: ["editor"]
+
   - name: firefox
     categories: ["browser", "network"]
 
@@ -94,6 +103,9 @@ commands:
 
   - name: gnome-shell
     categories: ["system"]
+
+  - name: gnome-text-editor
+    categories: ["editor"]
 
   - name: go
     version_cmd: ["go", "version"]  
@@ -136,11 +148,17 @@ commands:
     version_cmd: ["intune-portal", "-V"]
     categories: ["system"]
 
+  - name: iptables
+    categories: ["network"]
+  
   - name: java
     categories: ["language", "runtime", "development"]
 
   - name: jq
     categories: ["cli", "json", "scripting"]
+
+  - name: kate
+    categories: ["editor"]
 
   - name: kernel
     version_cmd: ["uname", "-r"]
@@ -163,11 +181,23 @@ commands:
     version_cmd: ["k9s", "version", "-s"]
     categories: ["devops", "kubernetes"]
 
+  - name: libreoffice
+    categories: ["editor"]
+
   - name: librewolf
     categories: ["browser", "network"]
 
   - name: lift
     version_cmd: ["lift", "version"]
+    categories: ["system"]
+
+  - name: lxqt-session
+    categories: ["system"]
+
+  - name: mate-session
+    categories: ["system"]
+
+  - name: cinnamon
     categories: ["system"]
 
   - name: make
@@ -211,6 +241,9 @@ commands:
   - name: nvm
     categories: ["version-manager", "js", "development"]
 
+  - name: onlyoffice-desktopeditors
+    categories: ["editor"]
+
   - name: pacman
     categories: ["package-manager"]
 
@@ -222,6 +255,9 @@ commands:
 
   - name: pipx
     categories: ["package-manager", "python", "cli"]
+
+  - name: palsmashell
+    categories: ["system"]
 
   - name: playwright
     categories: ["testing", "automation"]
@@ -285,6 +321,9 @@ commands:
   - name: wget
     categories: ["network", "cli"]
 
+  - name: wine
+    categories: ["virtualization", "system"]
+
   - name: yarn
     categories: ["package-manager", "javascript", "development"]
 
@@ -293,6 +332,9 @@ commands:
 
   - name: yum
     categories: ["package-manager"]
+
+  - name: xfce4-session
+    categories: ["system"]
 
   - name: zypper
     categories: ["package-manager"]
