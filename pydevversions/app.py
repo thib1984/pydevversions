@@ -4,6 +4,7 @@ pydevversions use case
 
 from pydevversions.args import compute_args, get_all_categories
 from importlib.metadata import version, PackageNotFoundError
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from tqdm import tqdm
 from rich.console import Console
@@ -30,18 +31,19 @@ import time
 
 #initialisation
 args = compute_args()
-raw=compute_args().raw
-is_json=compute_args().json
-compact=compute_args().compact
-debug=compute_args().debug
-noinfo=compute_args().noinfo
-noprogress=compute_args().noprogress
-noparams=compute_args().noparams
-noprograms=compute_args().noprograms
-noflatpak=compute_args().noflatpak
-noalias=compute_args().noalias
-filters = getattr(compute_args(), "filter", None)
-categories = getattr(compute_args(), "categories", None)
+workers=args.threads
+raw=args.raw
+is_json=args.json
+compact=args.compact
+debug=args.debug
+noinfo=args.noinfo
+noprogress=args.noprogress
+noparams=args.noparams
+noprograms=args.noprograms
+noflatpak=args.noflatpak
+noalias=args.noalias
+filters =args.filter
+categories=args.categories
 json_obj = {}
 try:
     app_version = version("pydevversions")
@@ -317,7 +319,7 @@ def stylize_path(cell):
         return text
     return cell
 
-def run_command_version(cmd):
+def run_command_version(cmd, multi):
     try:
         binary = cmd[0]
         # binaire réel
@@ -331,10 +333,17 @@ def run_command_version(cmd):
             if result.returncode == 0:
                 return (result.stdout.strip() or result.stderr.strip()) 
             return "not installed"   
+        #flatpak                 
+        if not noflatpak:
+            version = get_flatpak_version(binary)
+            if version:
+                return version
         #alias fonction
         if binary in aliases or binary in functions:
+            if multi:
+                return "_interactive_"
             result = subprocess.run(
-               [shell, "-i", "-c", shlex.join(cmd)],
+            [shell, "-i", "-c", shlex.join(cmd)],
                 capture_output=True,
                 text=True,
                 env=env
@@ -342,17 +351,72 @@ def run_command_version(cmd):
             if result.returncode == 0:
                 return (result.stdout.strip() or result.stderr.strip())  
             return "not installed"                       
-        #flatpak                 
-        else:
-            if not noflatpak:
-                version = get_flatpak_version(binary)
-                if version:
-                    return version
-            return "not installed"
+        return "not installed"
     except Exception as e:
         return "not installed"
 
+def process_item(item, multi):
+    name = item["name"]
+    base_binary = name.split()[0]
 
+    item_categories = item.get("categories", [])
+
+    if filters and not any(f in name for f in (filters if isinstance(filters, list) else [filters])):
+        return None
+    if categories and not any(
+        c in item_categories for c in (categories if isinstance(categories, list) else [categories])
+    ):
+        return None
+
+    version_cmd = item.get("version_cmd", [base_binary, "--version"])
+    version = run_command_version(version_cmd, multi)
+
+    if compute_args().compact:
+        version = "\n".join(version.splitlines()[:5])
+
+    if version != "not installed" and version != "_interactive_":
+        path_cmd = item.get("path_cmd")
+
+        if path_cmd is None:
+            if shutil.which(base_binary):
+                path_cmd = ["which", base_binary]
+            else:
+                if not noflatpak:
+                    try:
+                        path_cmd = find_flatpak_command(base_binary)
+                    except FileNotFoundError:
+                        path_cmd = None       
+                if base_binary in aliases or base_binary in functions:
+                    check_type = subprocess.run(
+                        [shell, "-i", "-c", f"type {shlex.quote(base_binary)}"],
+                        capture_output=True,
+                        text=True,
+                        env=env
+                    )
+                    if check_type.returncode == 0:
+                        path_cmd = ["echo", check_type.stdout.strip()]
+
+
+        if path_cmd:
+            result = subprocess.run(
+                path_cmd,
+                capture_output=True,
+                text=True,
+                env=env
+            )
+            output = result.stdout.strip().splitlines()
+            path_output = output[0] if output else ""
+        else:
+            path_output = ""
+
+    else:
+        path_output = "NA"
+
+    return {
+        "name": name,
+        "version": stylize_version(version),
+        "path": path_output
+    }
 
 def app():
     #info bloc
@@ -396,84 +460,135 @@ def app():
     
     #apps bloc
     if not noprograms:
-        iterable = tqdm(
-            commands_filtered,
-            desc="⏳ progress      : ",
-            bar_format="{desc}{n}/{total} {postfix}",
-        ) if use_tqdm else commands_filtered
-        for item in iterable:
-            name = item["name"]
-            base_binary = name.split()[0]
 
-            item_categories = item.get("categories", [])
-            if filters and not any(f in name for f in (filters if isinstance(filters, list) else [filters])):
-                continue
-            if categories and not any(
-                c in item_categories for c in (categories if isinstance(categories, list) else [categories])
-            ):
-                continue          
-            if use_tqdm:
-                iterable.set_postfix_str(f"{base_binary}")
-            
-            #obtain version
-            version_cmd = item.get(
-                "version_cmd",
-                [base_binary, "--version"]
-            )
-            version = run_command_version(version_cmd)
-            if compute_args().compact:
-                version = "\n".join(version.splitlines()[:5])          
+        results = []
+        with ThreadPoolExecutor(max_workers=workers) as executor:
+            futures = [executor.submit(process_item, item, workers>1) for item in commands_filtered]
+            iterable = tqdm(
+                    as_completed(futures),
+                    total=len(futures),
+                    desc="⏳ progress 1/2  : ",
+                    bar_format="{desc}{n}/{total}"
+                ) if use_tqdm else commands_filtered
+            for future in iterable:
+                result = future.result()
+                if result:
+                    results.append(result)
+        interactive_names = {
+            res["name"] for res in results
+            if str(res.get("version")) == "_interactive_"
+        }  
+        interactive_items = [
+            item for item in commands_filtered
+            if item["name"] in interactive_names
+        ]        
 
-            if version != "not installed":
-                #obtain path
-                path_cmd = item.get("path_cmd")
-                if path_cmd is None:
-                    #binaire
-                    if shutil.which(base_binary):
-                        path_cmd = ["which", base_binary]
-                    #fonction alias    
-                    else:
-                        if base_binary in aliases or base_binary in functions:
-                            check_type = subprocess.run(
-                                [shell, "-i", "-c", f"type {shlex.quote(base_binary)}"],
-                                capture_output=True,
-                                text=True,
-                                env=env
-                            )
-                            if check_type.returncode == 0:
-                                path_cmd = ["echo", check_type.stdout.strip()]
+        interactive_results = []
+        with ThreadPoolExecutor(max_workers=1) as executor:
+            futures = [executor.submit(process_item, item, False) for item in interactive_items]
+            iterable = tqdm(
+                    as_completed(futures),
+                    total=len(futures),
+                    desc="⏳ progress 2/2  : ",
+                    bar_format="{desc}{n}/{total}"
+                ) if use_tqdm else interactive_items        
+            for future in iterable:            
+                res = future.result()
+                if res:
+                    interactive_results.append(res)
 
-                        #flatpak    
-                        else:
-                            if not noflatpak:
-                                try:
-                                    path_cmd = find_flatpak_command(base_binary)
-                                except FileNotFoundError:
-                                    path_cmd = None
-                            else:
-                                path_cmd = None        
-                result = subprocess.run(
-                    path_cmd,
-                    capture_output=True,
-                    text=True,
-                    env=env
-                )                                
-                output = result.stdout.strip().splitlines()
-                path_output = output[0] if output else ""
-
-            else:
-                path_output = "NA"
-            
-
-            if version != "not installed" or args.full or getattr(compute_args(), "filter", None):  
-                if not is_json:                    
-                    table.add_row(name, stylize_version(version), stylize_path(path_output))
+        for i, res in enumerate(results):
+            if str(res.get("version")) == "_interactive_":
+                for ir in interactive_results:
+                    if ir["name"] == res["name"]:
+                        results[i] = ir
+                        break
+        results = sorted(results, key=lambda x: x["name"].lower())            
+        for r in results:
+            if str(r.get("version")) != "not installed" or args.full or getattr(compute_args(), "filter", None):
+                if not is_json:
+                    table.add_row(r["name"], r["version"], r["path"])
                 else:
-                    json_obj["programs"].append({
-                        "name": name,
-                        "version": stylize_version(version),
-                        "path": path_output
-                    })
+                    json_obj["programs"].append(r)
+
+        # iterable = tqdm(
+        #     commands_filtered,
+        #     desc="⏳ progress      : ",
+        #     bar_format="{desc}{n}/{total} {postfix}",
+        # ) if use_tqdm else commands_filtered
+        # for item in iterable:
+        #     name = item["name"]
+        #     base_binary = name.split()[0]
+
+        #     item_categories = item.get("categories", [])
+        #     if filters and not any(f in name for f in (filters if isinstance(filters, list) else [filters])):
+        #         continue
+        #     if categories and not any(
+        #         c in item_categories for c in (categories if isinstance(categories, list) else [categories])
+        #     ):
+        #         continue          
+        #     if use_tqdm:
+        #         iterable.set_postfix_str(f"{base_binary}")
+            
+        #     #obtain version
+        #     version_cmd = item.get(
+        #         "version_cmd",
+        #         [base_binary, "--version"]
+        #     )
+        #     version = run_command_version(version_cmd)
+        #     if compute_args().compact:
+        #         version = "\n".join(version.splitlines()[:5])          
+
+        #     if version != "not installed":
+        #         #obtain path
+        #         path_cmd = item.get("path_cmd")
+        #         if path_cmd is None:
+        #             #binaire
+        #             if shutil.which(base_binary):
+        #                 path_cmd = ["which", base_binary]
+        #             #fonction alias    
+        #             else:
+        #                 if base_binary in aliases or base_binary in functions:
+        #                     check_type = subprocess.run(
+        #                         [shell, "-i", "-c", f"type {shlex.quote(base_binary)}"],
+        #                         capture_output=True,
+        #                         text=True,
+        #                         env=env
+        #                     )
+        #                     if check_type.returncode == 0:
+        #                         path_cmd = ["echo", check_type.stdout.strip()]
+
+        #                 #flatpak    
+        #                 else:
+        #                     if not noflatpak:
+        #                         try:
+        #                             path_cmd = find_flatpak_command(base_binary)
+        #                         except FileNotFoundError:
+        #                             path_cmd = None
+        #                     else:
+        #                         path_cmd = None        
+        #         result = subprocess.run(
+        #             path_cmd,
+        #             capture_output=True,
+        #             text=True,
+        #             env=env
+        #         )                                
+        #         output = result.stdout.strip().splitlines()
+        #         path_output = output[0] if output else ""
+
+        #     else:
+        #         path_output = "NA"
+            
+
+        #     if version != "not installed" or args.full or getattr(compute_args(), "filter", None):  
+        #         if not is_json:                    
+        #             table.add_row(name, stylize_version(version), stylize_path(path_output))
+        #         else:
+        #             json_obj["programs"].append({
+        #                 "name": name,
+        #                 "version": stylize_version(version),
+        #                 "path": path_output
+        #             })
         if not is_json:
             print(f"⏳ exec. time    : {time.time() - start_time:.1f}s")
             console.print(table)

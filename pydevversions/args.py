@@ -24,8 +24,11 @@ def get_env_report():
         lines.append(f"  - {name}=={version}")
 
     return "\n".join(lines)    
-
-
+def threads_type(value):
+    ivalue = int(value)
+    if ivalue < 1 or ivalue > 64:
+        raise argparse.ArgumentTypeError("threads must be between 1 and 64")
+    return ivalue
 class CustomHelpFormatter(argparse.RawDescriptionHelpFormatter,argparse.HelpFormatter):
     def _format_action_invocation(self, action):
         if not action.option_strings or action.nargs == 0:
@@ -122,6 +125,12 @@ Written by thib1984.
         action="store_true",
         help="compact output with minimal version info",
     )
+    my_parser.add_argument(
+        "--threads",
+        type=threads_type,
+        default=8,
+        help="number of threads to use (1-32, default: 8)",
+    )    
     my_parser.add_argument(
         "--debug",
         action="store_true",
