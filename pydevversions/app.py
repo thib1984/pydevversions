@@ -28,8 +28,12 @@ import distro
 import shlex
 import time
 
-
+def format_message(label, text, emoji):
+    spaces = max(1, 14 - len(label))
+    prefix = f"{emoji} " if not (is_json or raw) else ""
+    return f"{prefix}{label}{' ' * spaces}: {text}"
 #initialisation
+
 args = compute_args()
 workers=args.threads
 raw=args.raw
@@ -51,18 +55,14 @@ except PackageNotFoundError:
     app_version = "dev"
 if not noparams:
     if not is_json:
-        message = f"pydevversions v{app_version} is running..."
-        if not raw:
-            message = "🚀 " + message
-        print(message)
-        message = f"command       : {' '.join(sys.argv[0:])}"
-        if not raw:
-            message = "🧾 " + message
-        print(message)
+        print(format_message("pydevversions",f"v{app_version} is running...","🚀"))
+        print(format_message("command",' '.join(sys.argv[0:]),"🧾"))
+        print(format_message("date",datetime.now().strftime("%Y-%m-%d %H:%M:%S"),"📅"))
     else:      
         json_obj["params"] = {}
         json_obj["params"]["version"] = f"pydevversions {app_version}"  
         json_obj["params"]["command"] = ' '.join(sys.argv[0:])
+        json_obj["params"]["date"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 start_time = time.time()  # 🔹 start timer
 BASE_DIR = Path(__file__).resolve().parent
 yaml_path = BASE_DIR / "apps.yaml"
@@ -94,15 +94,11 @@ for cmd in apps:
 if categories is not None:
     invalid = [cat for cat in categories if cat not in all_categories]
     if invalid:
-        message = (
-            "Error: non-existent category: "
+        sys.exit(format_message("error", "non-existent category: "
             + ", ".join(invalid)
             + ". Available category are "
             + ", ".join(sorted(all_categories))
-        )
-        if not raw:
-            message = "⚠️  " + message
-        sys.exit(message)
+        ,"❌"))
 if categories is not None:
     filtered_apps = [
         cmd for cmd in apps
@@ -119,9 +115,11 @@ if filters is not None:
             + ". Available applications: "
             + ", ".join(filtered_command_names)
         )
-        if not raw:
-            message = "⚠️  " + message
-        sys.exit(message)
+        sys.exit(format_message("error", "non-existent application(s): "
+            + ", ".join(invalid)
+            + ". Available applications: "
+            + ", ".join(filtered_command_names)
+        ,"❌"))
 commands_filtered = [cmd for cmd in filtered_apps if not filters or cmd["name"] in filters]
 
 #prepare shell
@@ -135,17 +133,18 @@ if shell == "bash":
 elif shell == "zsh":
     rc_files = ["~/.zshrc"]
 else:
-    message = "Erreur : shell not in bash,zsh"
-    if not raw:
-        message = "⚠️  " + message
-    sys.exit(message)
+    sys.exit(format_message("error", "shell not in bash,zsh","❌"))
 source_cmd = "source"
 source_cmds = " && ".join(
     f"[ -f {os.path.expanduser(f)} ] && {source_cmd} {os.path.expanduser(f)}"
     for f in rc_files
 )
 cmd_src = f"{source_cmds} && env"
+if debug:
+    print(format_message("debug cmdsrc",cmd_src,"👾"))
 result = subprocess.run([shell, "-c", cmd_src], capture_output=True, text=True)
+if debug:
+    print(format_message("debug cmdsrc",result,"👾"))
 env = dict(
     line.split("=", 1)
     for line in result.stdout.splitlines()
@@ -161,13 +160,16 @@ else:
         text=True
     )
     aliases = set(alias_proc.stdout.split())
-
+    if debug:
+        print(format_message("debug aliases",str(aliases),"👾"))
     func_proc = subprocess.run(
         [shell, "-i", "-c", "compgen -A function"],
         capture_output=True,
         text=True
     )
     functions = set(func_proc.stdout.split())
+    if debug:
+        print(format_message("debug functions",str(functions),"👾"))
 
 def get_flatpak_version(binary):
     binary = binary.lower()
@@ -422,43 +424,35 @@ def app():
     #info bloc
     
     if not noinfo:
-        labels = {
-            "date": "date" if raw else "📅 date",
-            "user": "user" if raw else "👤 user",
-            "home": "home" if raw else "🏠 home",
-            "shell": "shell" if raw else "💻 shell",
-            "cpu": "cpu" if raw else "🧠 cpu",
-            "ram": "ram" if raw else "⚡ ram",
-            "video": "video" if raw else "🎮 video",
-            "disk": "disk" if raw else "💾 disk",
-            "os": "os" if raw else "💻  os",
-            "secureboot": "SecureBoot" if raw else "🔐 SecureBoot",
-            "diskcrypto": "Disk Crypto" if raw else "🔐 Disk Crypto",
-            "display": "Display" if raw else "💻 Display",
-            "desktop": "Desktop" if raw else "💻 Desktop",            
-        }
-        info = {
-            "date": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            "user": getpass.getuser(),
-            "home": os.path.expanduser("~"),
-            "shell": shell,
-            "cpu": f"{cpu_infos()} ({os.cpu_count()} cores {psutil.cpu_freq() .max/1000:.2f} GHz)",
-            "ram": format_bytes(psutil.virtual_memory().total),
-            "disk": format_bytes(psutil.disk_usage('/').total),
-            "video": gpu_infos(),
-            "os": f"{distro.name()} {distro.version()} ({platform.release()})",
-            "secureboot": secure_boot_infos(),
-            "diskcrypto": disk_encryption_infos(),  
-            "display": display_server_infos(), 
-            "desktop": os.environ.get("XDG_CURRENT_DESKTOP") or os.environ.get("DESKTOP_SESSION") or os.environ.get("GDMSESSION")        
-        }
-        for key in ["date", "user", "home", "shell", "cpu", "ram", "disk", "video", "os", "secureboot", "diskcrypto", "desktop", "display"]:
-            if not is_json:
-                print(f"{labels[key]:<15} : {info[key]}")
-            else:
-                json_obj["info"][key] = info[key]
-    
-    #apps bloc
+        if not is_json:
+            print(format_message("user",getpass.getuser(),"👤"))
+            print(format_message("home",os.path.expanduser("~"),"🏠"))
+            print(format_message("shell",datetime.now().strftime("%Y-%m-%d %H:%M:%S"),"💻"))
+            print(format_message("cpu",f"{cpu_infos()} ({os.cpu_count()} cores {psutil.cpu_freq() .max/1000:.2f} GHz)","🧠"))
+            print(format_message("ram",format_bytes(psutil.virtual_memory().total),"⚡"))
+            print(format_message("video",gpu_infos(),"🎮"))
+            print(format_message("disk",format_bytes(psutil.disk_usage('/').total),"💾"))
+            print(format_message("os",f"{distro.name()} {distro.version()} ({platform.release()})","💻"))
+            print(format_message("secureBoot",secure_boot_infos(),"🔐"))
+            print(format_message("disk crypto",disk_encryption_infos(),"🔐"))
+            print(format_message("display",display_server_infos(),"💻"))
+            print(format_message("desktop",os.environ.get("XDG_CURRENT_DESKTOP") or os.environ.get("DESKTOP_SESSION") or os.environ.get("GDMSESSION"),"💻"))
+        else:
+            json_obj["info"]["user"]=getpass.getuser()
+            json_obj["info"]["home"]=os.path.expanduser("~")
+            json_obj["info"]["shell"]=datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            json_obj["info"]["cpu"]=f"{cpu_infos()} ({os.cpu_count()} cores {psutil.cpu_freq() .max/1000:.2f} GHz)"
+            json_obj["info"]["ram"]=format_bytes(psutil.virtual_memory().total)
+            json_obj["info"]["video"]=gpu_infos()
+            json_obj["info"]["disk"]=format_bytes(psutil.disk_usage('/').total)
+            json_obj["info"]["os"]=f"{distro.name()} {distro.version()} ({platform.release()})"
+            json_obj["info"]["secureBoot"]=secure_boot_infos()
+            json_obj["info"]["disk crypto"]=disk_encryption_infos()
+            json_obj["info"]["display"]=display_server_infos()
+            json_obj["info"]["desktop"]=os.environ.get("XDG_CURRENT_DESKTOP") or os.environ.get("DESKTOP_SESSION") or os.environ.get("GDMSESSION")
+           
+
+   #apps bloc
     if not noprograms:
 
         results = []
@@ -511,88 +505,12 @@ def app():
                 else:
                     json_obj["programs"].append(r)
 
-        # iterable = tqdm(
-        #     commands_filtered,
-        #     desc="⏳ progress      : ",
-        #     bar_format="{desc}{n}/{total} {postfix}",
-        # ) if use_tqdm else commands_filtered
-        # for item in iterable:
-        #     name = item["name"]
-        #     base_binary = name.split()[0]
-
-        #     item_categories = item.get("categories", [])
-        #     if filters and not any(f in name for f in (filters if isinstance(filters, list) else [filters])):
-        #         continue
-        #     if categories and not any(
-        #         c in item_categories for c in (categories if isinstance(categories, list) else [categories])
-        #     ):
-        #         continue          
-        #     if use_tqdm:
-        #         iterable.set_postfix_str(f"{base_binary}")
-            
-        #     #obtain version
-        #     version_cmd = item.get(
-        #         "version_cmd",
-        #         [base_binary, "--version"]
-        #     )
-        #     version = run_command_version(version_cmd)
-        #     if compute_args().compact:
-        #         version = "\n".join(version.splitlines()[:5])          
-
-        #     if version != "not installed":
-        #         #obtain path
-        #         path_cmd = item.get("path_cmd")
-        #         if path_cmd is None:
-        #             #binaire
-        #             if shutil.which(base_binary):
-        #                 path_cmd = ["which", base_binary]
-        #             #fonction alias    
-        #             else:
-        #                 if base_binary in aliases or base_binary in functions:
-        #                     check_type = subprocess.run(
-        #                         [shell, "-i", "-c", f"type {shlex.quote(base_binary)}"],
-        #                         capture_output=True,
-        #                         text=True,
-        #                         env=env
-        #                     )
-        #                     if check_type.returncode == 0:
-        #                         path_cmd = ["echo", check_type.stdout.strip()]
-
-        #                 #flatpak    
-        #                 else:
-        #                     if not noflatpak:
-        #                         try:
-        #                             path_cmd = find_flatpak_command(base_binary)
-        #                         except FileNotFoundError:
-        #                             path_cmd = None
-        #                     else:
-        #                         path_cmd = None        
-        #         result = subprocess.run(
-        #             path_cmd,
-        #             capture_output=True,
-        #             text=True,
-        #             env=env
-        #         )                                
-        #         output = result.stdout.strip().splitlines()
-        #         path_output = output[0] if output else ""
-
-        #     else:
-        #         path_output = "NA"
-            
-
-        #     if version != "not installed" or args.full or getattr(compute_args(), "filter", None):  
-        #         if not is_json:                    
-        #             table.add_row(name, stylize_version(version), stylize_path(path_output))
-        #         else:
-        #             json_obj["programs"].append({
-        #                 "name": name,
-        #                 "version": stylize_version(version),
-        #                 "path": path_output
-        #             })
         if not is_json:
             print(f"⏳ exec. time    : {time.time() - start_time:.1f}s")
             console.print(table)
-    
+    else:
+        if not is_json:
+            print(f"⏳ exec. time    : {time.time() - start_time:.1f}s")        
     #json bloc
     if is_json:
         print(json.dumps(json_obj, indent=4))
