@@ -32,8 +32,8 @@ def format_message(label, text, emoji):
     spaces = max(1, 14 - len(label))
     prefix = f"{emoji} " if not (is_json or raw) else ""
     return f"{prefix}{label}{' ' * spaces}: {text}"
-#initialisation
 
+#initialisation
 args = compute_args()
 workers=args.threads
 raw=args.raw
@@ -255,14 +255,14 @@ def secure_boot_infos():
     if debug:
         print(format_message("debug mokutil",result,"👾"))      
     if result.returncode != 0:
-        return "not available (error running mokutil)"
+        return "error running mokutil"
     output = result.stdout.lower()
     if "enabled" in output:
-        return "activated"
+        return "secure boot enabled"
     elif "disabled" in output:
-        return "not activated"
+        return "secure boot disabled"
     else:
-        return "not available (unexpected output running mokutil)"
+        return "error running mokutil"
     
 def disk_encryption_infos():
     result = subprocess.run(
@@ -273,19 +273,19 @@ def disk_encryption_infos():
     if debug:
         print(format_message("debug lsblk",result,"👾"))       
     if result.returncode != 0:
-        return "not available (error running lsblk)"    
+        return "error running lsblk"    
     output = result.stdout.lower()
     if "crypto" in output:
-        return "encrypted"
+        return "disk encrypted"
     else:
-        return "not encrypted"
+        return "disk not encrypted"
 
 def cpu_infos():
     try:
         with open("/proc/cpuinfo") as f:
             for line in f:
                 if "model name" in line:
-                    return line.strip().split(":")[1]
+                    return (line.strip().split(":")[1]).strip()
     except:
         return "not available (error opening /proc/cpuinfo)"
 
@@ -434,34 +434,25 @@ def app():
     
     if not noinfo:
         if not is_json:
-            print(format_message("user",getpass.getuser(),"👤"))
-            print(format_message("home",os.path.expanduser("~"),"🏠"))
-            print(format_message("shell",datetime.now().strftime("%Y-%m-%d %H:%M:%S"),"💻"))
-            print(format_message("cpu",f"{cpu_infos()} ({os.cpu_count()} cores {psutil.cpu_freq() .max/1000:.2f} GHz)","🧠"))
-            print(format_message("ram",format_bytes(psutil.virtual_memory().total),"⚡"))
-            print(format_message("video",gpu_infos(),"🎮"))
-            print(format_message("disk",format_bytes(psutil.disk_usage('/').total),"💾"))
+            print(format_message("user (shell)",getpass.getuser() + " ("+os.environ.get("SHELL")+")","👤"))
             print(format_message("os",f"{distro.name()} {distro.version()} ({platform.release()})","💻"))
-            print(format_message("secureBoot",secure_boot_infos(),"🔐"))
-            print(format_message("disk crypto",disk_encryption_infos(),"🔐"))
-            print(format_message("display",display_server_infos(),"💻"))
-            print(format_message("desktop",os.environ.get("XDG_CURRENT_DESKTOP") or os.environ.get("DESKTOP_SESSION") or os.environ.get("GDMSESSION"),"💻"))
+            print(format_message("display",(os.environ.get("XDG_CURRENT_DESKTOP") or os.environ.get("DESKTOP_SESSION") or os.environ.get("GDMSESSION")) + " " + display_server_infos(),"💻"))
+            print(format_message("cpu",f"{cpu_infos()} ({os.cpu_count()} cores {psutil.cpu_freq() .max/1000:.2f} GHz)","🧠"))
+            print(format_message("video",gpu_infos(),"🎮"))
+            print(format_message("ram",format_bytes(psutil.virtual_memory().total),"⚡"))
+            print(format_message("disk",format_bytes(psutil.disk_usage('/').total),"💾"))
+            print(format_message("security",secure_boot_infos() + " / " + disk_encryption_infos(),"🔐"))
         else:
-            json_obj["info"]["user"]=getpass.getuser()
-            json_obj["info"]["home"]=os.path.expanduser("~")
-            json_obj["info"]["shell"]=datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            json_obj["info"]["user_shell"]=getpass.getuser() + "("+os.environ.get("SHELL")+")"
+            json_obj["info"]["os"]=f"{distro.name()} {distro.version()} ({platform.release()})"
+            json_obj["info"]["desktop"]=(os.environ.get("XDG_CURRENT_DESKTOP") or os.environ.get("DESKTOP_SESSION") or os.environ.get("GDMSESSION")) + " " + display_server_infos()
             json_obj["info"]["cpu"]=f"{cpu_infos()} ({os.cpu_count()} cores {psutil.cpu_freq() .max/1000:.2f} GHz)"
             json_obj["info"]["ram"]=format_bytes(psutil.virtual_memory().total)
             json_obj["info"]["video"]=gpu_infos()
             json_obj["info"]["disk"]=format_bytes(psutil.disk_usage('/').total)
-            json_obj["info"]["os"]=f"{distro.name()} {distro.version()} ({platform.release()})"
-            json_obj["info"]["secureBoot"]=secure_boot_infos()
-            json_obj["info"]["disk crypto"]=disk_encryption_infos()
-            json_obj["info"]["display"]=display_server_infos()
-            json_obj["info"]["desktop"]=os.environ.get("XDG_CURRENT_DESKTOP") or os.environ.get("DESKTOP_SESSION") or os.environ.get("GDMSESSION")
-           
+            json_obj["info"]["security"]=secure_boot_infos() + " / " + disk_encryption_infos()
 
-   #apps bloc
+    #apps bloc
     if not noprograms:
 
         results = []
