@@ -179,7 +179,8 @@ def get_flatpak_version(binary):
             capture_output=True,
             text=True
         )
-
+        if debug:
+            print(format_message("debug flatpak list",result,"👾"))
         if result.returncode != 0:
             continue
 
@@ -192,7 +193,8 @@ def get_flatpak_version(binary):
                     capture_output=True,
                     text=True
                 )
-
+                if debug:
+                    print(format_message("debug flatpak info",result,"👾"))
                 if info.returncode != 0:
                     continue
 
@@ -214,7 +216,8 @@ def find_flatpak_command(base_binary):
             capture_output=True,
             text=True
         )
-
+        if debug:
+            print(format_message("debug flatpak list",result,"👾"))
         if result.returncode != 0:
             continue
         for app in result.stdout.splitlines():
@@ -232,6 +235,8 @@ def gpu_infos():
         capture_output=True,
         text=True
     )
+    if debug:
+        print(format_message("debug lspci",result,"👾"))    
     if result.returncode != 0:
         return "not available (error running lspci)"            
     gpus = []
@@ -247,6 +252,8 @@ def secure_boot_infos():
         capture_output=True,
         text=True
     )
+    if debug:
+        print(format_message("debug mokutil",result,"👾"))      
     if result.returncode != 0:
         return "not available (error running mokutil)"
     output = result.stdout.lower()
@@ -263,6 +270,8 @@ def disk_encryption_infos():
         capture_output=True,
         text=True,
     )
+    if debug:
+        print(format_message("debug lsblk",result,"👾"))       
     if result.returncode != 0:
         return "not available (error running lsblk)"    
     output = result.stdout.lower()
@@ -463,7 +472,7 @@ def app():
                     total=len(futures),
                     desc="⏳ progress 1/2  : ",
                     bar_format="{desc}{n}/{total}"
-                ) if use_tqdm else commands_filtered
+                ) if use_tqdm else futures
             for future in iterable:
                 result = future.result()
                 if result:
@@ -485,7 +494,7 @@ def app():
                     total=len(futures),
                     desc="⏳ progress 2/2  : ",
                     bar_format="{desc}{n}/{total}"
-                ) if use_tqdm else interactive_items        
+                ) if use_tqdm else futures        
             for future in iterable:            
                 res = future.result()
                 if res:
