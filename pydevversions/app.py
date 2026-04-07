@@ -384,7 +384,7 @@ def process_item(item, multi):
     version = run_command_version(version_cmd, multi)
 
     if compute_args().compact:
-        version = "\n".join(version.splitlines()[:5])
+        version = "\n".join(version.splitlines()[:10])
 
     if version != "not installed" and version != "_interactive_":
         path_cmd = item.get("path_cmd")
@@ -437,7 +437,7 @@ def app():
         if not is_json:
             print(format_message("user (shell)",getpass.getuser() + " ("+os.environ.get("SHELL")+")","👤"))
             print(format_message("os",f"{distro.name()} {distro.version()} ({platform.release()})","💻"))
-            print(format_message("display",(os.environ.get("XDG_CURRENT_DESKTOP") or os.environ.get("DESKTOP_SESSION") or os.environ.get("GDMSESSION")) + " " + display_server_infos(),"💻"))
+            print(format_message("display",(os.environ.get("XDG_CURRENT_DESKTOP") or os.environ.get("DESKTOP_SESSION") or os.environ.get("GDMSESSION") or "None") + " " + display_server_infos(),"💻"))
             print(format_message("cpu",f"{cpu_infos()} ({os.cpu_count()} cores {psutil.cpu_freq() .max/1000:.2f} GHz)","🧠"))
             print(format_message("video",gpu_infos(),"🎮"))
             print(format_message("ram",format_bytes(psutil.virtual_memory().total),"⚡"))
