@@ -252,38 +252,43 @@ def gpu_infos():
     except:
         return ["no GPU detected"]
 def secure_boot_infos():
-    result = subprocess.run(
-        ["mokutil", "--sb-state"],
-        capture_output=True,
-        text=True
-    )
-    if debug:
-        print(format_message("debug mokutil",result,"👾"))      
-    if result.returncode != 0:
-        return "error running mokutil"
-    output = result.stdout.lower()
-    if "enabled" in output:
-        return "secure boot enabled"
-    elif "disabled" in output:
-        return "secure boot disabled"
-    else:
-        return "error running mokutil"
-    
+    try:
+        result = subprocess.run(
+            ["mokutil", "--sb-state"],
+            capture_output=True,
+            text=True
+        )
+        if debug:
+            print(format_message("debug mokutil",result,"👾"))      
+        if result.returncode != 0:
+            return "error running mokutil"
+        output = result.stdout.lower()
+        if "enabled" in output:
+            return "secure boot enabled"
+        elif "disabled" in output:
+            return "secure boot disabled"
+        else:
+            return "error running mokutil"
+    except:
+        return "error running mokutil"    
 def disk_encryption_infos():
-    result = subprocess.run(
-        ["lsblk", "-f"],
-        capture_output=True,
-        text=True,
-    )
-    if debug:
-        print(format_message("debug lsblk",result,"👾"))       
-    if result.returncode != 0:
+    try:
+        result = subprocess.run(
+            ["lsblk", "-f"],
+            capture_output=True,
+            text=True,
+        )
+        if debug:
+            print(format_message("debug lsblk",result,"👾"))       
+        if result.returncode != 0:
+            return "error running lsblk"    
+        output = result.stdout.lower()
+        if "crypto" in output:
+            return "disk encrypted"
+        else:
+            return "disk not encrypted"
+    except:
         return "error running lsblk"    
-    output = result.stdout.lower()
-    if "crypto" in output:
-        return "disk encrypted"
-    else:
-        return "disk not encrypted"
 
 def cpu_infos():
     try:
