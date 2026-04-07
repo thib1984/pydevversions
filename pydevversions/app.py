@@ -27,7 +27,7 @@ import platform
 import distro 
 import shlex
 import time
-import threading
+
 def format_message(label, text, emoji):
     spaces = max(1, 14 - len(label))
     prefix = f"{emoji} " if not (is_json or raw) else ""
@@ -297,7 +297,7 @@ def cpu_infos():
                 if "model name" in line:
                     return (line.strip().split(":")[1]).strip()
     except:
-        return "not available (error opening /proc/cpuinfo)"
+        return "? (error opening /proc/cpuinfo)"
 
 def display_server_infos():
     if os.environ.get("WAYLAND_DISPLAY"):
@@ -305,7 +305,7 @@ def display_server_infos():
     elif os.environ.get("DISPLAY"):
         return "X11"
     else:
-        return "not available"
+        return "?"
 
 def format_bytes(size):
     if size is None:
@@ -454,7 +454,7 @@ def app():
         else:
             json_obj["info"]["user_shell"]=getpass.getuser() + "("+os.environ.get("SHELL")+")"
             json_obj["info"]["os"]=f"{distro.name()} {distro.version()} ({platform.release()})"
-            json_obj["info"]["desktop"]=(os.environ.get("XDG_CURRENT_DESKTOP") or os.environ.get("DESKTOP_SESSION") or os.environ.get("GDMSESSION")) + " " + display_server_infos()
+            json_obj["info"]["desktop"]=(os.environ.get("XDG_CURRENT_DESKTOP") or os.environ.get("DESKTOP_SESSION") or os.environ.get("GDMSESSION") or "None") + " " + display_server_infos()
             json_obj["info"]["cpu"]=f"{cpu_infos()} ({os.cpu_count()} cores {psutil.cpu_freq() .max/1000:.2f} GHz)"
             json_obj["info"]["ram"]=format_bytes(psutil.virtual_memory().total)
             json_obj["info"]["video"]=gpu_infos()
