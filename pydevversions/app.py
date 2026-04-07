@@ -386,7 +386,7 @@ def process_item(item, multi):
     version = run_command_version(version_cmd, multi)
 
     if not details:
-        version = "\n".join(version.splitlines())
+        version = "\n".join(version.splitlines()[:10])
 
     if version != "not installed" and version != "_interactive_":
         path_cmd = item.get("path_cmd")
