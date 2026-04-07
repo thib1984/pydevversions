@@ -240,17 +240,25 @@ def gpu_infos():
             text=True
         )
         if debug:
-            print(format_message("debug lspci",result,"👾"))    
+            print(format_message("debug lspci", result, "👾"))    
+
         if result.returncode != 0:
-            return "not available (error running lspci)"            
+            return "gpu information cannot be determined"            
+
         gpus = []
         for line in result.stdout.splitlines():
             if "VGA compatible controller" in line:
-                name = line.split(":")[-1].strip()
+                name = line.split(":", 2)[-1].strip()
                 gpus.append(name)
-        return ", ".join(gpus) if gpus else ["no GPU detected"]
-    except:
-        return ["no GPU detected"]
+
+        if gpus:
+            return ", ".join(gpus)
+        else:
+            return "no GPU detected"
+
+    except Exception:
+        return "gpu information cannot be determined"
+    
 def secure_boot_infos():
     try:
         result = subprocess.run(
@@ -261,16 +269,16 @@ def secure_boot_infos():
         if debug:
             print(format_message("debug mokutil",result,"👾"))      
         if result.returncode != 0:
-            return "error running mokutil"
+            return "secure boot state cannot be determined"
         output = result.stdout.lower()
         if "enabled" in output:
             return "secure boot enabled"
         elif "disabled" in output:
             return "secure boot disabled"
         else:
-            return "error running mokutil"
+            return "secure boot state cannot be determined"
     except:
-        return "error running mokutil"    
+        return "secure boot state cannot be determined"    
 def disk_encryption_infos():
     try:
         result = subprocess.run(
@@ -281,31 +289,35 @@ def disk_encryption_infos():
         if debug:
             print(format_message("debug lsblk",result,"👾"))       
         if result.returncode != 0:
-            return "error running lsblk"    
+            return "disk encryption state cannot be determined"    
         output = result.stdout.lower()
         if "crypto" in output:
             return "disk encrypted"
         else:
             return "disk not encrypted"
     except:
-        return "error running lsblk"    
+        return "disk encryption state cannot be determined"    
 
 def cpu_infos():
     try:
         with open("/proc/cpuinfo") as f:
             for line in f:
                 if "model name" in line:
-                    return (line.strip().split(":")[1]).strip()
-    except:
-        return "? (error opening /proc/cpuinfo)"
+                    return line.split(":", 1)[1].strip()
+        return "cpu infos cannot be determined"
+    except Exception:
+        return "cpu infos cannot be determined"
 
 def display_server_infos():
-    if os.environ.get("WAYLAND_DISPLAY"):
-        return "Wayland"
-    elif os.environ.get("DISPLAY"):
-        return "X11"
-    else:
-        return "?"
+    try:
+        if os.environ.get("WAYLAND_DISPLAY"):
+            return "Wayland"
+        elif os.environ.get("DISPLAY"):
+            return "X11"
+        else:
+            return "display server cannot be determined"
+    except Exception:
+        return "display server cannot be determined"
 
 def format_bytes(size):
     if size is None:
@@ -445,7 +457,7 @@ def app():
         if not is_json:
             print(format_message("user (shell)",getpass.getuser() + " ("+os.environ.get("SHELL")+")","👤"))
             print(format_message("os",f"{distro.name()} {distro.version()} ({platform.release()})","💻"))
-            print(format_message("display",(os.environ.get("XDG_CURRENT_DESKTOP") or os.environ.get("DESKTOP_SESSION") or os.environ.get("GDMSESSION") or "None") + " " + display_server_infos(),"💻"))
+            print(format_message("display",((os.environ.get("XDG_CURRENT_DESKTOP") or os.environ.get("DESKTOP_SESSION") or os.environ.get("GDMSESSION") or "") + " " + display_server_infos()).strip(),"💻"))
             print(format_message("cpu",f"{cpu_infos()} ({os.cpu_count()} cores {psutil.cpu_freq() .max/1000:.2f} GHz)","🧠"))
             print(format_message("video",gpu_infos(),"🎮"))
             print(format_message("ram",format_bytes(psutil.virtual_memory().total),"⚡"))
@@ -454,7 +466,7 @@ def app():
         else:
             json_obj["info"]["user_shell"]=getpass.getuser() + "("+os.environ.get("SHELL")+")"
             json_obj["info"]["os"]=f"{distro.name()} {distro.version()} ({platform.release()})"
-            json_obj["info"]["desktop"]=(os.environ.get("XDG_CURRENT_DESKTOP") or os.environ.get("DESKTOP_SESSION") or os.environ.get("GDMSESSION") or "None") + " " + display_server_infos()
+            json_obj["info"]["desktop"]=((os.environ.get("XDG_CURRENT_DESKTOP") or os.environ.get("DESKTOP_SESSION") or os.environ.get("GDMSESSION") or "") + " " + display_server_infos()).strip()
             json_obj["info"]["cpu"]=f"{cpu_infos()} ({os.cpu_count()} cores {psutil.cpu_freq() .max/1000:.2f} GHz)"
             json_obj["info"]["ram"]=format_bytes(psutil.virtual_memory().total)
             json_obj["info"]["video"]=gpu_infos()
