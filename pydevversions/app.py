@@ -27,7 +27,7 @@ import platform
 import distro 
 import shlex
 import time
-
+import threading
 def format_message(label, text, emoji):
     spaces = max(1, 14 - len(label))
     prefix = f"{emoji} " if not (is_json or raw) else ""
@@ -38,7 +38,7 @@ args = compute_args()
 workers=args.threads
 raw=args.raw
 is_json=args.json
-compact=args.compact
+details=args.details
 debug=args.debug
 notime=args.notime
 noinfo=args.noinfo
@@ -49,6 +49,8 @@ noflatpak=args.noflatpak
 noalias=args.noalias
 filters =args.filter
 categories=args.categories
+type_shell=args.shell
+is_filter=getattr(args, "filter", None)
 json_obj = {}
 try:
     app_version = version("pydevversions")
@@ -124,11 +126,11 @@ if filters is not None:
 commands_filtered = [cmd for cmd in filtered_apps if not filters or cmd["name"] in filters]
 
 #prepare shell
-if not compute_args().shell:
+if not type_shell:
     shell_path = os.environ.get("SHELL", "/bin/bash")
     shell = os.path.basename(shell_path) 
 else:
-    shell=compute_args().shell  
+    shell=type_shell  
 if shell == "bash":
     rc_files = ["~/.bashrc"]
 elif shell == "zsh":
@@ -307,7 +309,7 @@ def format_bytes(size):
         size /= 1024
 
 def stylize_version(cell):
-    if compact:
+    if not details:
         matches = list(re.finditer(word_with_version_regex, cell))
         reduced_cell = " ".join(match.group(0) for match in matches)
         if reduced_cell.strip():
@@ -383,8 +385,8 @@ def process_item(item, multi):
     version_cmd = item.get("version_cmd", [base_binary, "--version"])
     version = run_command_version(version_cmd, multi)
 
-    if compute_args().compact:
-        version = "\n".join(version.splitlines()[:10])
+    if not details:
+        version = "\n".join(version.splitlines())
 
     if version != "not installed" and version != "_interactive_":
         path_cmd = item.get("path_cmd")
@@ -423,7 +425,6 @@ def process_item(item, multi):
 
     else:
         path_output = "NA"
-
     return {
         "name": name,
         "version": stylize_version(version),
@@ -500,7 +501,7 @@ def app():
                         break
         results = sorted(results, key=lambda x: x["name"].lower())            
         for r in results:
-            if str(r.get("version")) != "not installed" or args.full or getattr(compute_args(), "filter", None):
+            if str(r.get("version")) != "not installed" or args.full or is_filter:
                 if not is_json:
                     table.add_row(r["name"], r["version"], r["path"])
                 else:

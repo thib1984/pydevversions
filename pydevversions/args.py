@@ -121,9 +121,9 @@ Written by thib1984.
         nargs="+"        
     )
     my_parser.add_argument(
-        "--compact",
+        "--details",
         action="store_true",
-        help="compact output with minimal version info",
+        help="detail output with maximal version info",
     )
     my_parser.add_argument(
         "--threads",
