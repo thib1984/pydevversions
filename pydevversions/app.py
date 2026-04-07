@@ -233,22 +233,24 @@ def find_flatpak_command(base_binary):
 
 
 def gpu_infos():
-    result = subprocess.run(
-        ["lspci"],
-        capture_output=True,
-        text=True
-    )
-    if debug:
-        print(format_message("debug lspci",result,"👾"))    
-    if result.returncode != 0:
-        return "not available (error running lspci)"            
-    gpus = []
-    for line in result.stdout.splitlines():
-        if "VGA compatible controller" in line:
-            name = line.split(":")[-1].strip()
-            gpus.append(name)
-    return ", ".join(gpus) if gpus else ["no GPU detected"]
-
+    try:
+        result = subprocess.run(
+            ["lspci"],
+            capture_output=True,
+            text=True
+        )
+        if debug:
+            print(format_message("debug lspci",result,"👾"))    
+        if result.returncode != 0:
+            return "not available (error running lspci)"            
+        gpus = []
+        for line in result.stdout.splitlines():
+            if "VGA compatible controller" in line:
+                name = line.split(":")[-1].strip()
+                gpus.append(name)
+        return ", ".join(gpus) if gpus else ["no GPU detected"]
+    except:
+        return ["no GPU detected"]
 def secure_boot_infos():
     result = subprocess.run(
         ["mokutil", "--sb-state"],
