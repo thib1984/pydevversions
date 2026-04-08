@@ -36,6 +36,7 @@ def format_message(label, text, emoji):
 #initialisation
 args = compute_args()
 workers=args.threads
+compact=args.compact
 raw=args.raw
 is_json=args.json
 details=args.details
@@ -339,8 +340,9 @@ def stylize_version(cell):
     if cell=="not installed":
         text.stylize("red bold")
         return text
-    for match in re.finditer(word_with_version_regex, cell):
-        text.stylize("yellow bold", match.start(), match.end())
+    if not compact:
+        for match in re.finditer(word_with_version_regex, cell):
+            text.stylize("yellow bold", match.start(), match.end())
     return text
 
 def stylize_path(cell):
@@ -529,6 +531,12 @@ def app():
         if not is_json:
             if not notime:
                 print(f"⏳ exec. time    : {time.time() - start_time:.1f}s")
+            if compact:   
+                table.show_header = False
+                table.show_lines = False
+                table.border_style = None
+
+                table.row_styles = ["blue", "green"]  # alternance couleurs              
             console.print(table)
     else:
         if not is_json and not notime:

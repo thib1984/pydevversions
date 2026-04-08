@@ -126,6 +126,11 @@ Written by thib1984.
         help="detail output with maximal version info",
     )
     my_parser.add_argument(
+        "--compact",
+        action="store_true",
+        help="compact view",
+    )    
+    my_parser.add_argument(
         "--threads",
         type=threads_type,
         default=8,
