@@ -57,7 +57,7 @@ try:
     app_version = version("pydevversions")
 except PackageNotFoundError:
     app_version = "dev"
-if not noparams:
+if not noparams and not compact:
     if not is_json:
         print(format_message("pydevversions",f"v{app_version} is running...","🚀"))
         print(format_message("command",' '.join(sys.argv[0:]),"🧾"))
@@ -72,7 +72,7 @@ BASE_DIR = Path(__file__).resolve().parent
 yaml_path = BASE_DIR / "apps.yaml"
 word_with_version_regex = re.compile(r'\S*\d\S*')
 
-if not noinfo:
+if not noinfo and not compact:
     json_obj["info"] = {}
 if not noprograms:
     json_obj["programs"] = []
@@ -84,7 +84,7 @@ if not is_json:
     table.add_column("Version")
     table.add_column("Path")
     
-use_tqdm = not (raw or is_json or debug or noprogress or noprograms)
+use_tqdm = not (raw or is_json or debug or noprogress or noprograms or compact)
 
 #filter apps
 with open(yaml_path, "r") as f:
@@ -455,7 +455,7 @@ def process_item(item, multi):
 def app():
     #info bloc
     
-    if not noinfo:
+    if not noinfo and not compact:
         if not is_json:
             print(format_message("user (shell)",getpass.getuser() + " ("+os.environ.get("SHELL")+")","👤"))
             print(format_message("os",f"{distro.name()} {distro.version()} ({platform.release()})","💻"))
@@ -529,7 +529,7 @@ def app():
                     json_obj["programs"].append(r)
 
         if not is_json:
-            if not notime:
+            if not notime and not compact:
                 print(f"⏳ exec. time    : {time.time() - start_time:.1f}s")
             if compact:   
                 table.show_header = False
@@ -539,7 +539,7 @@ def app():
                     table.row_styles = ["blue", "green"]              
             console.print(table)
     else:
-        if not is_json and not notime:
+        if not is_json and not notime and not compact:
             print(f"⏳ exec. time    : {time.time() - start_time:.1f}s")        
     #json bloc
     if is_json:
