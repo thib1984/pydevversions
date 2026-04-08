@@ -526,7 +526,10 @@ def app():
                 if not is_json:
                     table.add_row(r["name"], r["version"], r["path"])
                 else:
-                    json_obj["programs"].append(r)
+                    if not compact:
+                        json_obj["programs"].append(r)
+                    else:
+                        json_obj["programs"].append({"name": r["name"], "version": r["version"]})    
 
         if not is_json:
             if not notime and not compact:
