@@ -409,7 +409,7 @@ def process_item(item, multi):
     if not details:
         version = "\n".join(version.splitlines()[:10])
 
-    if version != "not installed" and version != "_interactive_":
+    if version != "not installed" and version != "_interactive_" and not compact:
         path_cmd = item.get("path_cmd")
 
         if path_cmd is None:
@@ -535,6 +535,9 @@ def app():
                 table.show_header = False
                 table.show_lines = False
                 table.border_style = None
+                table.expand = False  
+                table.columns.pop(2)
+                table.columns[1].max_width = 100
                 if not raw:
                     table.row_styles = ["blue", "green"]              
             console.print(table)
