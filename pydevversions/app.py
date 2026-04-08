@@ -250,7 +250,7 @@ def gpu_infos():
 
         gpus = []
         for line in result.stdout.splitlines():
-            if "VGA compatible controller" in line:
+            if "VGA compatible controller" in line or "3D controller" in line:
                 name = line.split(":", 2)[-1].strip()
                 gpus.append(name)
 
