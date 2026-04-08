@@ -85,7 +85,7 @@ commands:
 
   - name: exegol
     categories: ["security", "pentesting"]
-    version_cmd: ["exegol", "--accept-eula", "version"]
+    version_cmd: ["exegol", "version", "--accept-eula"]
 
   - name: firefox
     categories: ["browser", "network"]
