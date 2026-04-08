@@ -152,6 +152,7 @@ commands:
     categories: ["network"]
   
   - name: java
+    version_cmd: ["java", "-version"]
     categories: ["language", "runtime", "development"]
 
   - name: jq
