@@ -234,7 +234,24 @@ def find_flatpak_command(base_binary):
 
     return None
 
+import subprocess
 
+def get_prime_gpu():
+    try:
+        result = subprocess.run(
+            ["prime-select", "query"],
+            capture_output=True,
+            text=True
+        )
+
+        if result.returncode == 0:
+            return result.stdout.strip()
+
+        return "unknown"
+
+    except Exception:
+        return "None"
+          
 def gpu_infos():
     try:
         result = subprocess.run(
@@ -342,6 +359,9 @@ def stylize_version(cell):
     if cell=="not installed":
         text.stylize("red bold")
         return text
+    if cell.startswith("error running"):
+        text.stylize("red bold")
+        return text    
     if not compact:
         for match in re.finditer(word_with_version_regex, cell):
             text.stylize("yellow bold", match.start(), match.end())
@@ -369,7 +389,7 @@ def run_command_version(cmd, multi):
             )
             if result.returncode == 0:
                 return (result.stdout.strip() or result.stderr.strip()) 
-            return "not installed"   
+            return f"error running {cmd}"   
         #flatpak                 
         if not noflatpak:
             version = get_flatpak_version(binary)
@@ -387,7 +407,7 @@ def run_command_version(cmd, multi):
             )
             if result.returncode == 0:
                 return (result.stdout.strip() or result.stderr.strip())  
-            return "not installed"                       
+            return f"error running {cmd}"                       
         return "not installed"
     except Exception as e:
         return "not installed"
@@ -432,6 +452,8 @@ def process_item(item, multi):
                     )
                     if check_type.returncode == 0:
                         path_cmd = ["echo", check_type.stdout.strip()]
+                    else:
+                        path_output = f"error running {[shell, "-i", "-c", f"type {shlex.quote(base_binary)}"]}"
 
 
         if path_cmd:
@@ -441,10 +463,11 @@ def process_item(item, multi):
                 text=True,
                 env=env
             )
-            output = result.stdout.strip().splitlines()
+            if result.returncode == 0:
+                output = result.stdout.strip().splitlines()
+            else:
+                output = f"error running {path_cmd}"                    
             path_output = output[0] if output else ""
-        else:
-            path_output = ""
 
     else:
         path_output = "NA"
@@ -464,6 +487,7 @@ def app():
             print(format_message("display",((os.environ.get("XDG_CURRENT_DESKTOP") or os.environ.get("DESKTOP_SESSION") or os.environ.get("GDMSESSION") or "") + " " + display_server_infos()).strip(),"💻"))
             print(format_message("cpu",f"{cpu_infos()} ({os.cpu_count()} cores {psutil.cpu_freq() .max/1000:.2f} GHz)","🧠"))
             print(format_message("video",gpu_infos(),"🎮"))
+            print(format_message("prime-select",get_prime_gpu(),"🎮"))
             print(format_message("ram",format_bytes(psutil.virtual_memory().total),"⚡"))
             print(format_message("disk",format_bytes(psutil.disk_usage('/').total),"💾"))
             print(format_message("security",secure_boot_infos() + " / " + disk_encryption_infos(),"🔐"))
@@ -474,6 +498,7 @@ def app():
             json_obj["info"]["cpu"]=f"{cpu_infos()} ({os.cpu_count()} cores {psutil.cpu_freq() .max/1000:.2f} GHz)"
             json_obj["info"]["ram"]=format_bytes(psutil.virtual_memory().total)
             json_obj["info"]["video"]=gpu_infos()
+            json_obj["info"]["prime-select"]=get_prime_gpu()
             json_obj["info"]["disk"]=format_bytes(psutil.disk_usage('/').total)
             json_obj["info"]["security"]=secure_boot_infos() + " / " + disk_encryption_infos()
 

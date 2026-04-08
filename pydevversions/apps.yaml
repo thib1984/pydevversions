@@ -83,6 +83,10 @@ commands:
   - name: emacs
     categories: ["editor"]
 
+  - name: exegol
+    categories: ["security", "pentesting"]
+    version_cmd: ["exegol", "--accept-eula", "version"]
+
   - name: firefox
     categories: ["browser", "network"]
 
@@ -213,6 +217,9 @@ commands:
   - name: minikube
     version_cmd: ["minikube", "version"]
     categories: ["devops", "kubernetes"]
+
+  - name: mise
+    categories: ["package-manager"]
 
   - name: mongo
     categories: ["database"]
