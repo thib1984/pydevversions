@@ -61,11 +61,13 @@ if not noparams and not compact:
     if not is_json:
         print(format_message("pydevversions",f"v{app_version} is running...","🚀"))
         print(format_message("command",' '.join(sys.argv[0:]),"🧾"))
+        print(format_message("path",os.path.abspath(os.getcwd()), "🗂️ "))
         print(format_message("date",datetime.now().strftime("%Y-%m-%d %H:%M:%S"),"📅"))
     else:      
         json_obj["params"] = {}
         json_obj["params"]["version"] = f"pydevversions {app_version}"  
         json_obj["params"]["command"] = ' '.join(sys.argv[0:])
+        json_obj["params"]["path"] = os.path.abspath(os.getcwd())       
         json_obj["params"]["date"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 start_time = time.time()  # 🔹 start timer
 BASE_DIR = Path(__file__).resolve().parent
