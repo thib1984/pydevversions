@@ -535,8 +535,8 @@ def app():
                 table.show_header = False
                 table.show_lines = False
                 table.border_style = None
-
-                table.row_styles = ["blue", "green"]  # alternance couleurs              
+                if not raw:
+                    table.row_styles = ["blue", "green"]              
             console.print(table)
     else:
         if not is_json and not notime:
