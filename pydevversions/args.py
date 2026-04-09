@@ -103,14 +103,22 @@ Written by thib1984.
         help="json output",
     ),       
     my_parser.add_argument(
-        "-f",
-        "--filter",
+        "-a",
+        "--apps",
         action="store",
         type=str,
         metavar="app",
         help=f"filter on apps (available: {', '.join(all_apps)})",
         nargs="+"
     )
+    my_parser.add_argument(
+        "-f",
+        "--filter",
+        action="store",
+        type=str,
+        metavar="app",
+        help=f"filter on word",
+    )    
     my_parser.add_argument(
         "-c",
         "--categories",

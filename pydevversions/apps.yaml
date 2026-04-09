@@ -60,6 +60,9 @@ commands:
   - name: curl
     categories: ["network", "devops"]
 
+  - name: cyberwatch-agent
+    categories: ["security"]
+    
   - name: dig
     version_cmd: ["dig", "-v"]
     categories: ["network"]

@@ -35,6 +35,7 @@ def format_message(label, text, emoji):
 
 #initialisation
 args = compute_args()
+filter=args.filter
 workers=args.threads
 compact=args.compact
 raw=args.raw
@@ -48,10 +49,10 @@ noparams=args.noparams
 noprograms=args.noprograms
 noflatpak=args.noflatpak
 noalias=args.noalias
-filters =args.filter
+filters_apps =args.apps
 categories=args.categories
 type_shell=args.shell
-is_filter=getattr(args, "filter", None)
+is_filter_apps=getattr(args, "apps", None)
 json_obj = {}
 try:
     app_version = version("pydevversions")
@@ -112,8 +113,8 @@ if categories is not None:
 else:
     filtered_apps = apps
 filtered_command_names = [cmd["name"] for cmd in filtered_apps]
-if filters is not None:
-    invalid = [f for f in filters if f not in filtered_command_names]
+if filters_apps is not None:
+    invalid = [f for f in filters_apps if f not in filtered_command_names]
     if invalid:
         message = (
             "Error: non-existent application(s): "
@@ -126,7 +127,7 @@ if filters is not None:
             + ". Available applications: "
             + ", ".join(filtered_command_names)
         ,"❌"))
-commands_filtered = [cmd for cmd in filtered_apps if not filters or cmd["name"] in filters]
+commands_filtered = [cmd for cmd in filtered_apps if not filters_apps or cmd["name"] in filters_apps]
 
 #prepare shell
 if not type_shell:
@@ -418,7 +419,7 @@ def process_item(item, multi):
 
     item_categories = item.get("categories", [])
 
-    if filters and not any(f in name for f in (filters if isinstance(filters, list) else [filters])):
+    if filters_apps and not any(f in name for f in (filters_apps if isinstance(filters_apps, list) else [filters_apps])):
         return None
     if categories and not any(
         c in item_categories for c in (categories if isinstance(categories, list) else [categories])
@@ -552,14 +553,18 @@ def app():
                         break
         results = sorted(results, key=lambda x: x["name"].lower())            
         for r in results:
-            if str(r.get("version")) != "not installed" or args.full or is_filter:
+            if str(r.get("version")) != "not installed" or args.full or is_filter_apps:
                 if not is_json:
-                    table.add_row(r["name"], r["version"], r["path"])
+                    if not filter or (any(filter in r[key] for key in ["name", "version", "path"])):
+                            table.add_row(r["name"], r["version"], r["path"])
                 else:
-                    if not compact:
-                        json_obj["programs"].append(r)
-                    else:
-                        json_obj["programs"].append({"name": r["name"], "version": r["version"]})    
+                    if not compact and (not filter or (any(filter in r[key] for key in ["name", "version", "path"]))):
+                        if any(filter in r[key] for key in ["name", "version"]):
+                            json_obj["programs"].append(r) 
+                            
+                    elif compact and (not filter or (any(filter in r[key] for key in ["name", "version", "path"]))):
+                        if any(filter in r[key] for key in ["name", "version", "path"]):
+                            json_obj["programs"].append({"name": r["name"], "version": r["version"]})    
 
         if not is_json:
             if not notime and not compact:
