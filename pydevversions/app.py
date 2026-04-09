@@ -37,6 +37,7 @@ def format_message(label, text, emoji):
 args = compute_args()
 filter=args.filter
 workers=args.threads
+lucky=args.lucky
 compact=args.compact
 raw=args.raw
 is_json=args.json
@@ -74,7 +75,7 @@ start_time = time.time()  # 🔹 start timer
 BASE_DIR = Path(__file__).resolve().parent
 yaml_path = BASE_DIR / "apps.yaml"
 word_with_version_regex = re.compile(r'\S*\d\S*')
-
+word_lucky_version=re.compile(r'\d[A-Za-z0-9.]*')
 if not noinfo and not compact:
     json_obj["info"] = {}
 if not noprograms:
@@ -348,8 +349,19 @@ def format_bytes(size):
             return f"{size:.2f} {unit}"
         size /= 1024
 
-def stylize_version(cell):
-    if not details:
+def stylize_version(cell, regex, group):
+    if lucky:
+        if regex is None:
+            match = re.search(word_lucky_version, cell)
+            group=0
+        else:
+            match = re.search(re.compile(regex), cell)    
+        if match:
+            try:
+                cell = match.group(group) 
+            except IndexError:
+                pass           
+    elif not details:
         matches = list(re.finditer(word_with_version_regex, cell))
         reduced_cell = " ".join(match.group(0) for match in matches)
         if reduced_cell.strip():
@@ -477,7 +489,7 @@ def process_item(item, multi):
         path_output = "NA"
     return {
         "name": name,
-        "version": stylize_version(version),
+        "version": stylize_version(version, item.get("regex"), item.get("regex_group")),
         "path": path_output
     }
 

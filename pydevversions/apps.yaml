@@ -2,6 +2,8 @@ commands:
 
   - name: android-studio
     categories: ["development", "ide"]
+    regex: '(\d[A-Za-z0-9.]*) .*? (\d[A-Za-z0-9.]*)'
+    regex_group: 0
 
   - name: ansible
     categories: ["devops"]
@@ -41,6 +43,8 @@ commands:
   - name: cf8
     version_cmd: ["cf8", "version"]
     categories: ["devops"]
+    regex: '(?:\d[A-Za-z0-9.]*.*?){1}(\d[A-Za-z0-9.]*)'
+    regex_group: 1
 
   - name: chromedriver
     categories: ["testing", "automation"]

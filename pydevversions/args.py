@@ -191,6 +191,11 @@ Written by thib1984.
         "--notime",
         action="store_true",
         help="disable time spent",
-    )                            
+    ) 
+    my_parser.add_argument(
+        "--lucky",
+        action="store_true",
+        help="try to give correct version in one word",
+    )                                
     args = my_parser.parse_args()
     return args
