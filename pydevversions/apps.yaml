@@ -235,6 +235,12 @@ commands:
   - name: mongo
     categories: ["database"]
 
+  - name: mongosh
+    categories: ["database"]
+
+  - name: mongodb-compass
+    categories: ["database"]
+
   - name: mysql
     categories: ["database"]
 
@@ -311,6 +317,9 @@ commands:
   - name: sdk
     version_cmd: ["sdk", "version"]
     categories: ["package-manager"]
+
+  - name: redis-cli
+    categories: ["database"]
 
   - name: rustc
     categories: ["language", "runtime"]
