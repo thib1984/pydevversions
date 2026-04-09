@@ -66,6 +66,7 @@ commands:
 
   - name: docker
     categories: ["devops", "containers"]
+    if: "docker"
     
   - name: docker-compose
     version_cmd: ["docker", "compose", "version"]
@@ -76,6 +77,7 @@ commands:
     version_cmd: ["cat", "/opt/ds_agent/version.txt"]
     path_cmd: ["echo", " /opt/ds_agent/ds_agent"]
     categories: ["system", "security"]
+    if: "/opt/ds_agent/ds_agent"
 
   - name: eclipse
     categories: ["development", "ide"]
@@ -277,6 +279,7 @@ commands:
     version_cmd: ["dpkg-query", "-W", "-f=${Version}\n", "pulsesecure"]
     path_cmd: ["echo", "/opt/pulsesecure/bin/pulsesecure"]
     categories: ["system"]
+    if: "/opt/pulsesecure/bin/pulsesecure"
 
   - name: python
     categories: ["development", "runtime", "python"]

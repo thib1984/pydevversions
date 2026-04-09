@@ -425,11 +425,14 @@ def process_item(item, multi):
     ):
         return None
 
-    version_cmd = item.get("version_cmd", [base_binary, "--version"])
-    version = run_command_version(version_cmd, multi)
+    if item.get("if") and shutil.which(item.get("if")) is None:
+        version ="not installed"
+    else:      
+        version_cmd = item.get("version_cmd", [base_binary, "--version"])
+        version = run_command_version(version_cmd, multi)
 
-    if not details:
-        version = "\n".join(version.splitlines()[:10])
+        if not details:
+            version = "\n".join(version.splitlines()[:10])
 
     if version != "not installed" and version != "_interactive_" and not compact:
         path_cmd = item.get("path_cmd")
