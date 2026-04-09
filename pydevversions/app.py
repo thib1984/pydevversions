@@ -571,12 +571,11 @@ def app():
                             table.add_row(r["name"], r["version"], r["path"])
                 else:
                     if not compact and (not filter or (any(filter in r[key] for key in ["name", "version", "path"]))):
-                        if any(filter in r[key] for key in ["name", "version"]):
+                        if not filter or (any(filter in r[key] for key in ["name", "version"])):
                             json_obj["programs"].append(r) 
                             
                     elif compact and (not filter or (any(filter in r[key] for key in ["name", "version", "path"]))):
-                        if any(filter in r[key] for key in ["name", "version", "path"]):
-                            json_obj["programs"].append({"name": r["name"], "version": r["version"]})    
+                        json_obj["programs"].append({"name": r["name"], "version": r["version"]})    
 
         if not is_json:
             if not notime and not compact:
