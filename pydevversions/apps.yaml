@@ -51,6 +51,9 @@ commands:
   - name: cinnamon
     categories: ["system"]
 
+  - name: claude
+    categories: ["ia"]
+
   - name: code
     categories: ["development", "ide"]
 
@@ -103,6 +106,9 @@ commands:
 
   - name: gcc
     categories: ["build"] 
+
+  - name: gemini
+    categories: ["ia"]
 
   - name: git
     categories: ["development", "version-control"]
@@ -198,6 +204,9 @@ commands:
     version_cmd: ["lift", "version"]
     categories: ["system"]
 
+  - name: llm
+    categories: ["ia"]
+
   - name: lxqt-session
     categories: ["system"]
 
@@ -251,8 +260,17 @@ commands:
   - name: nvm
     categories: ["version-manager", "js", "development"]
 
+  - name: ollama
+    categories: ["ia"]
+
   - name: onlyoffice-desktopeditors
     categories: ["editor"]
+
+  - name: openai
+    categories: ["ia"]
+
+  - name: opencode
+    categories: ["ia"]
 
   - name: pacman
     categories: ["package-manager"]
