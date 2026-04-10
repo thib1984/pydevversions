@@ -175,7 +175,7 @@ commands:
     categories: ["language", "runtime", "development"]
 
   - name: jq
-    categories: ["cli", "json", "scripting"]
+    categories: ["scripting", "database"]
 
   - name: kate
     categories: ["editor"]
@@ -262,16 +262,16 @@ commands:
     categories: ["network"]
 
   - name: node
-    categories: ["runtime", "js"]
+    categories: ["runtime", "development"]
 
   - name: nmap
     categories: ["network", "security", "pentesting"]
 
   - name: npm
-    categories: ["package-manager", "js", "development"]
+    categories: ["package-manager", "development"]
 
   - name: nvm
-    categories: ["version-manager", "js", "development"]
+    categories: ["version-manager", "development"]
 
   - name: ollama
     categories: ["ia"]
@@ -289,13 +289,13 @@ commands:
     categories: ["package-manager"]
 
   - name: pip
-    categories: ["package-manager", "python", "development"]
+    categories: ["package-manager", "development"]
 
   - name: pip3
-    categories: ["package-manager", "python", "development"]
+    categories: ["package-manager", "development"]
 
   - name: pipx
-    categories: ["package-manager", "python", "cli"]
+    categories: ["package-manager"]
 
   - name: palsmashell
     categories: ["system"]
@@ -313,10 +313,10 @@ commands:
     if: "/opt/pulsesecure/bin/pulsesecure"
 
   - name: python
-    categories: ["development", "runtime", "python"]
+    categories: ["development", "runtime"]
 
   - name: python3
-    categories: ["development", "runtime", "python"]
+    categories: ["development", "runtime"]
 
   - name: secretops
     categories: ["security", "devops"]
@@ -364,13 +364,13 @@ commands:
     categories: ["virtualization", "system"]
 
   - name: wget
-    categories: ["network", "cli"]
+    categories: ["network"]
 
   - name: wine
     categories: ["virtualization", "system"]
 
   - name: yarn
-    categories: ["package-manager", "javascript", "development"]
+    categories: ["package-manager", "development"]
 
   - name: yay
     categories: ["package-manager"]
