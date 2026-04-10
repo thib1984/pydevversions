@@ -139,6 +139,9 @@ commands:
   - name: gradle
     categories: ["build", "development"]
 
+  - name: grep
+    categories: ["system"]
+
   - name: groovy
     categories: ["language", "development", "scripting"]
 
@@ -220,9 +223,6 @@ commands:
   - name: mate-session
     categories: ["system"]
 
-  - name: cinnamon
-    categories: ["system"]
-
   - name: make
     categories: ["build", "development"]
 
@@ -284,6 +284,9 @@ commands:
 
   - name: opencode
     categories: ["ia"]
+
+  - name: onedrive
+    categories: ["system"]
 
   - name: pacman
     categories: ["package-manager"]

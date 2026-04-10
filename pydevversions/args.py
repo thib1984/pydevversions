@@ -188,14 +188,14 @@ Written by thib1984.
         help="disable display params",
     )   
     my_parser.add_argument(
-        "--notime",
+        "--time",
         action="store_true",
-        help="disable time spent",
+        help="enable time spent",
     ) 
     my_parser.add_argument(
         "--lucky",
         action="store_true",
         help="try to give correct version in one word",
-    )                                
+    )                                 
     args = my_parser.parse_args()
     return args

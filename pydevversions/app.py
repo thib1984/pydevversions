@@ -43,7 +43,7 @@ raw=args.raw
 is_json=args.json
 details=args.details
 debug=args.debug
-notime=args.notime
+withtime=args.time
 noinfo=args.noinfo
 noprogress=args.noprogress
 noparams=args.noparams
@@ -87,6 +87,8 @@ if not is_json:
     table.add_column("Binary")
     table.add_column("Version")
     table.add_column("Path")
+    if withtime:
+        table.add_column("Time")
     
 use_tqdm = not (raw or is_json or debug or noprogress or noprograms or compact)
 
@@ -426,6 +428,7 @@ def run_command_version(cmd, multi):
         return "not installed"
 
 def process_item(item, multi):
+    start = time.perf_counter()
     name = item["name"]
     base_binary = name.split()[0]
 
@@ -487,12 +490,20 @@ def process_item(item, multi):
 
     else:
         path_output = "NA"
-    return {
-        "name": name,
-        "version": stylize_version(version, item.get("regex"), item.get("regex_group")),
-        "path": path_output
-    }
-
+    end = time.perf_counter()
+    if withtime:   
+        return {
+            "name": name,
+            "version": stylize_version(version, item.get("regex"), item.get("regex_group")),
+            "path": path_output,
+            "time": str(round(end - start, 2))+"s"
+        }
+    else:
+        return {
+            "name": name,
+            "version": stylize_version(version, item.get("regex"), item.get("regex_group")),
+            "path": path_output,
+        }
 def app():
     #info bloc
     
@@ -568,17 +579,20 @@ def app():
             if str(r.get("version")) != "not installed" or args.full or is_filter_apps:
                 if not is_json:
                     if not filter or (any(filter in r[key] for key in ["name", "version", "path"])):
-                            table.add_row(r["name"], r["version"], r["path"])
+                            if withtime:
+                                table.add_row(r["name"], r["version"], r["path"], r["time"])
+                            else:
+                                table.add_row(r["name"], r["version"], r["path"])
                 else:
                     if not compact and (not filter or (any(filter in r[key] for key in ["name", "version", "path"]))):
                         if not filter or (any(filter in r[key] for key in ["name", "version"])):
                             json_obj["programs"].append(r) 
                             
                     elif compact and (not filter or (any(filter in r[key] for key in ["name", "version", "path"]))):
-                        json_obj["programs"].append({"name": r["name"], "version": r["version"]})    
+                        json_obj["programs"].append({"name": r["name"], "version": r["version"], "time": r["time"]})    
 
         if not is_json:
-            if not notime and not compact:
+            if withtime and not compact:
                 print(f"⏳ exec. time    : {time.time() - start_time:.1f}s")
             if compact:   
                 table.show_header = False
@@ -591,7 +605,7 @@ def app():
                     table.row_styles = ["blue", "green"]              
             console.print(table)
     else:
-        if not is_json and not notime and not compact:
+        if not is_json and withtime and not compact:
             print(f"⏳ exec. time    : {time.time() - start_time:.1f}s")        
     #json bloc
     if is_json:
