@@ -589,7 +589,10 @@ def app():
                             json_obj["programs"].append(r) 
                             
                     elif compact and (not filter or (any(filter in r[key] for key in ["name", "version", "path"]))):
-                        json_obj["programs"].append({"name": r["name"], "version": r["version"], "time": r["time"]})    
+                        if withtime:
+                            json_obj["programs"].append({"name": r["name"], "version": r["version"], "time": r["time"]}) 
+                        else:
+                             json_obj["programs"].append({"name": r["name"], "version": r["version"]})                       
 
         if not is_json:
             if withtime and not compact:
