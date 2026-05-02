@@ -140,6 +140,7 @@ commands:
     categories: ["build", "development"]
 
   - name: grep
+    version_cmd: ["grep", "--help"]
     categories: ["system"]
 
   - name: groovy
@@ -258,7 +259,7 @@ commands:
     categories: ["editor"]
 
   - name: nc
-    version_cmd: ["nc", "-h"]
+    version_cmd: ["nc"]
     categories: ["network"]
 
   - name: node
@@ -357,6 +358,7 @@ commands:
     categories: ["security", "devops", "containers", "scanner"]
 
   - name: vi
+    version_cmd: ["vi", "--help"]
     categories: ["editor"]
 
   - name: vim
@@ -367,6 +369,7 @@ commands:
     categories: ["virtualization", "system"]
 
   - name: wget
+    version_cmd: ["wget", "--help"]
     categories: ["network"]
 
   - name: wine

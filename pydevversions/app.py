@@ -28,6 +28,15 @@ import distro
 import shlex
 import time
 
+def proc():
+    proc = psutil.Process(os.getpid())
+
+    while proc:
+        name = proc.name()
+        if name in ("bash", "zsh", "fish", "sh"):
+            return name
+        proc = proc.parent()
+        
 def format_message(label, text, emoji):
     spaces = max(1, 14 - len(label))
     prefix = f"{emoji} " if not (is_json or raw) else ""
@@ -134,8 +143,7 @@ commands_filtered = [cmd for cmd in filtered_apps if not filters_apps or cmd["na
 
 #prepare shell
 if not type_shell:
-    shell_path = os.environ.get("SHELL", "/bin/bash")
-    shell = os.path.basename(shell_path) 
+    shell = proc()
 else:
     shell=type_shell  
 if shell == "bash":
@@ -427,6 +435,7 @@ def run_command_version(cmd, multi):
     except Exception as e:
         return "not installed"
 
+
 def process_item(item, multi):
     start = time.perf_counter()
     name = item["name"]
@@ -509,7 +518,7 @@ def app():
     
     if not noinfo and not compact:
         if not is_json:
-            print(format_message("user (shell)",getpass.getuser() + " ("+os.environ.get("SHELL")+")","👤"))
+            print(format_message("user (shell)",getpass.getuser() + " ("+proc()+")","👤"))
             print(format_message("os",f"{distro.name()} {distro.version()} ({platform.release()})","💻"))
             print(format_message("display",((os.environ.get("XDG_CURRENT_DESKTOP") or os.environ.get("DESKTOP_SESSION") or os.environ.get("GDMSESSION") or "") + " " + display_server_infos()).strip(),"💻"))
             print(format_message("cpu",f"{cpu_infos()} ({os.cpu_count()} cores {psutil.cpu_freq() .max/1000:.2f} GHz)","🧠"))
@@ -519,7 +528,7 @@ def app():
             print(format_message("disk",format_bytes(psutil.disk_usage('/').total),"💾"))
             print(format_message("security",secure_boot_infos() + " / " + disk_encryption_infos(),"🔐"))
         else:
-            json_obj["info"]["user_shell"]=getpass.getuser() + "("+os.environ.get("SHELL")+")"
+            json_obj["info"]["user_shell"]=getpass.getuser() + "("+proc()+")"
             json_obj["info"]["os"]=f"{distro.name()} {distro.version()} ({platform.release()})"
             json_obj["info"]["desktop"]=((os.environ.get("XDG_CURRENT_DESKTOP") or os.environ.get("DESKTOP_SESSION") or os.environ.get("GDMSESSION") or "") + " " + display_server_infos()).strip()
             json_obj["info"]["cpu"]=f"{cpu_infos()} ({os.cpu_count()} cores {psutil.cpu_freq() .max/1000:.2f} GHz)"
