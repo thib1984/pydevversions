@@ -140,7 +140,6 @@ commands:
     categories: ["build", "development"]
 
   - name: grep
-    version_cmd: ["grep", "--help"]
     categories: ["system"]
 
   - name: groovy
@@ -259,7 +258,7 @@ commands:
     categories: ["editor"]
 
   - name: nc
-    version_cmd: ["nc"]
+    version_cmd: ["nc", "-h"]
     categories: ["network"]
 
   - name: node
